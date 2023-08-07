@@ -12,9 +12,9 @@ When FS_EnumerateExtData is called by MSET (System Settings) to parse 3DS extdat
 While mostly leading to null derefs, in one specific context, ARM9 jumps directly to the ID1 string being held nearby in ARM9 memory. Serendipitously, the 3DS doesn't discern what characters are used for the ID1 directory name on the SD, only requiring exactly 32 chars. This allows the attacker to insert arm instructions into the unicode ID1 dirname and take control of ARM9, and thus, full control of the 3DS.
 
 ## Can I do it?
--- You need an old3ds, latest firm (new3ds will be coming soon)
--- A spare SD card you can format to blank (this will likely change too, I just don't want people screwing their main sd card up in these early days).
--- Windows PC (this should be expanded after the exploit leaves beta)
+-- You need an old3ds, latest firm (new3ds will be coming soon)<br>
+-- A spare SD card you can format to blank (this will likely change too, I just don't want people screwing their main sd card up in these early days).<br>
+-- Windows PC (this should be expanded after the exploit leaves beta)<br>
 
 ## Directions
 In release archive. It may seem long and complex but it really isn't that bad. People who have trouble following directions will struggle though.<br>
