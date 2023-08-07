@@ -1,0 +1,10 @@
+Dear ARM9,
+
+Please read this and crash while executing FS_EnumerateExtData and jump PC to ID1 and follow further instructions there.
+- so we can run some cool homebrew :>
+
+Thanks, 
+Mr. Zoogie :)
+
+PS: yes, this is what triggers the exploit
+and yes, it's just a normal text file!
