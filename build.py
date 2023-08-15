@@ -5,7 +5,7 @@ import os,sys,struct,random
 254AEFE0  top screen    old 11.17  us/eu/jp e0 ef 54 02
 2550fbe0  both screens
 
-2908efe0  new 11.17
+2908EFE0  new 11.17
 
 2dbf0000  new heap
 fffb541c FFFFFFFF0004ABE4
