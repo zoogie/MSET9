@@ -25,21 +25,34 @@
 .global _start
 
 _start:
+    mov r11, pc
+    sub r11, r11, #(8)
+	
+	ldr r0, =0x23100000
+	mov r1, r11
+	ldr r2, =0x4200
+	bl memcpy
 
-    mov r1, pc
-    sub r1, r1, #8
-    ldr r0, =0x23100000
-    ldr r2, =0x4200
-    blx memcpy
-    
-    ldr r0, =0x23100000
-    ldr r1, = _start
-    ldr r2, = end_init_transfer
-    sub r3, r2, r1
-    add r3, r3, r0
-    blx r3
+	adr r0, svc7b
+	svc 0x7b
+svc7b:	
+	ldr sp, =0x23100000
+	msr cpsr_c, #(0x13 | (1 << 6) | (1 << 7)) @ SVC MODE | NO INTERRUPTS
+	ldr r1, =(~((1 << 0) | (1 << 2) | (1 << 12)))   @ 0xffffeffa
+	mrc p15, 0, r4, c1, c0, 0
+	and r4, r4, r1
+	mcr p15, 0, r4, c1, c0, 0
+	
+	ldr r0, =0x23100000
+	ldr r1, = _start
+	ldr r2, = end_init_transfer
+	sub r3, r2, r1
+	add r3, r3, r0
+
+	blx r3
     
 end_init_transfer:
+
     
     @ Disable interrupts and switch to supervisor mode (also clear flags)
     mov r4, #0x13

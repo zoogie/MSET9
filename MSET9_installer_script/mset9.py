@@ -10,12 +10,20 @@ elif p == 'Darwin':
 	OPSYS=2
 else:
 	OPSYS=0
+cwd = os.path.dirname(os.path.abspath(__file__))  
+print(cwd)
+try:
+	os.chdir(cwd)
+except Exception:
+	print("Failed to set cwd: " + cwd)
+	exit(1)
 
-cwd=os.getcwd()
-trigger="254DEFE0.txt"
-#trigger="290BEFE0.txt"   #new3ds
+trigger="002F003A.txt"    #all 3ds ":/"
 
-haxid1=bytes.fromhex("300032003800360030003000610061003600340008909FE26988A0116808A0117B0000EFD3F021E30C109FE5104F11EE014004E0104F01EE4CF09DE5FAEFFFFF") #ID1 - arm injected payload in readable format
+#old3ds 11.8-11.17
+id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946FFAA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
+
+haxid1=bytes.fromhex(id1_haxstr) #ID1 - arm injected payload in readable format
 haxid1=haxid1.decode("utf-16le")
 haxid1_path=""
 id1=""
@@ -149,10 +157,19 @@ def check(keyfile, size, crc32):
 				print("%s \n was not recognized as the correct file" % keyfile)
 				sys.exit(0)
 
+def reapply_cwd():
+	try:
+		os.chdir(cwd)
+		return True
+	except Exception:
+		print("Couldn't reapply cwd, is sdcard reinserted?")
+		return False
+
 check("boot9strap/boot9strap.firm", 0, 0x08129c1f)
-check("Nintendo 3DS/Private/00020400/phtcache.bin", 0x7f53c, 0)
+#check("Nintendo 3DS/Private/00020400/phtcache.bin", 0x7f53c, 0)
 check("boot.firm", 0, 0)
 check("boot.3dsx", 0, 0)
+check("b9", 0, 0)
 if id0_count == 0:
 	print("\nYou're supposed to be running this on the 3DS SD card!")
 	print("NOT \n%s" % cwd)
@@ -179,6 +196,9 @@ while 1:
 		command = int(input('>>>'))
 	except:
 		command = 42
+
+	if command >=1 and command <= 4 and not reapply_cwd():
+		continue # reapply_cwd already prints error if fail
 	
 	if command   == 1:
 		setup()

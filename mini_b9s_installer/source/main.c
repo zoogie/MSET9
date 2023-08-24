@@ -122,29 +122,28 @@ void Shutdown(){
 
 void main(void)
 {
+	//if(1) Reboot();
 	if(ISDEVUNIT) Shutdown();
 	
 	u32 size=0x3e00;
-	u8 *b9s=(u8*)0x23300000;
-	u8 *b9s2=(b9s+=size);
+	u8 *b9s=(u8*)0x23120000;
+	u8 *b9s2=(b9s+=0x20000);
 
-	sdmmc_sdcard_init();
-	mountSd();
-	
 	memset(b9s, 0, size);
 	memset(b9s2, 0, size);
 	
-	u32 rd = fileRead(b9s, "/boot9strap/boot9strap.firm", size, 0);
-	unmountSd();
-	
+	sdmmc_sdcard_init();
 	ctrNandInit();
-	readFirm0(b9s2, size);
+	mountSd();
+	u32 rd = fileRead(b9s, "/boot9strap/boot9strap.firm", size, 0);
 	
-	if(memcmp(b9s2, "FIRM", 4)) Shutdown();    //if nand rw isn't working, shutdown system as precaution
-	if(!memcmp(b9s2+0x3D, "B9S", 3)) Reboot(); //if b9s firm already installed, reboot since goal achieved already
-	
+	//readFirm0(b9s2, size);
+		
+	//if(memcmp(b9s2, "FIRM", 4)) Shutdown();    //if nand rw isn't working, shutdown system as precaution
+	//if(!memcmp(b9s2+0x3D, "B9S", 3)) Reboot(); //if b9s firm already installed, reboot since goal achieved already
+
 	if( (rd == size) && (crc32(b9s, size) == CRC32_RETAIL) ){ 
-	
+
 		writeFirm(b9s, false, size);
 		
 		for(int i=0; i<5; i++){  //read back firm and check our work, rewriting firm if necessary. times 5.

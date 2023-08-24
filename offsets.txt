@@ -1,0 +1,20 @@
+firmware	region	oldnew	fopen		fread	
+
+11.17x2		usa	old 	0805A071	0804ce99
+11.17		eur	old 	0805A071	0804ce99
+11.17		jpn	old 	0805A071	0804ce99
+11.17		usa	new	0805A071	0804ce5d
+11.17		eur	new	0805A071	0804ce5d
+11.16		usa	new	0805A071	0804ce5d
+11.16		kor	new	0805A071	0804ce5d
+11.15		usa	old 	0805A071	0804ce99
+11.14		kor	new	0805A071	0804ce5d
+11.13x2		usa	old 	0805A071	0804ce99
+11.8		usa	old	0805A071	0804ce99
+11.5		usa	new	08059E45	0804cc81
+11.4		usa	new	08059E45	0804cc81
+11.4		usa	old	08059E49	0804cc99
+
+patterns:
+fopen F7 B5 84 B0 04 98 0D 00
+fread FF B5 07 00 1C 00 00 26

@@ -16,6 +16,6 @@ SECTIONS
 
     __end__ = ABSOLUTE(.);
 
-    __stack_top__    = 0x22f00000;
-    __stack_bottom__ = 0x22ef0000;
+    __stack_top__    = 0x23100000;
+    __stack_bottom__ = 0x23100000-0x8000;
 }
