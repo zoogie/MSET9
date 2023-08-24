@@ -35,7 +35,7 @@ Q: That file that triggers the exploit (002F003A.txt) ... it kinda looks like ..
 A: It's the characters ":/", something we can't display in a typical file/folder name. A convenient fact of that file (besides triggering the overall crash) is that the first 8 chars of that hex filename are converted to a u32 that happens to exist 0x44 past SP, so I can use it to plug in the missing chars in the payload filepath "sdmc??b9", and keep the PC's OS happy.<br>
 Q: You suggested in the hack explanation above that FS_EnumerateExtData is the responsible function for allowing the crash in MSET/ARM9, could this be called in userland homebrew to take over ARM9?<br>
 A: Maybe? I briefly played around with this very idea, but was unable to find a crash context that I could control, unlike the pre-userland method described above. Maybe this could be an exercise for the dedicated user to explore and flesh out this potential variant of MSET9! It could be useful down the line.<br>
-Fun fact: The 8 digit hex file, if left in extdata, will also crash FBI when selecting the "Ext Save Data" option in its main menu. It's the only homebrew I know that calls FS_EnumerateExtData.
+Fun fact: The 8 digit hex file, if left in extdata, will also crash FBI when selecting the "Ext Save Data" option in its main menu. It's the only homebrew I know that calls FS_EnumerateExtData.<br>
 Q: Why doesn't this work on MAC?<br>
 A: Because it refuses to render the following unicode craziness: ￿﫿餑䠇䚅敩ꄈ∁䬅䞘䙨䙙꫿ᰗ䙃䰃䞠䞸退ࠊꁱࠅ캙ࠄsdmc退ࠊb9<br>
 ( ͡° ͜ʖ ͡°)<br>
