@@ -22,3 +22,7 @@ path=id1[:32-len(raw)//2]+str(raw,encoding='utf-16le')
 print("length of path: %d" % len(path))  #always be 32 chars
 
 os.mkdir(path)
+
+with open("haxID1_output.txt","w") as f:
+	f.write(path.encode('utf-16le').hex().upper())
+	f.write("\n\nTo be placed in var id1_haxstr, in mset9.py")

@@ -43,6 +43,7 @@
 *.idb
 *.pdb
 *.lst
+haxID1_output.txt
 
 # Kernel Module Compile Results
 *.mod*

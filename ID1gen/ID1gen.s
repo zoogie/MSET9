@@ -26,7 +26,7 @@ thumb_section:
 							
 				mov r0, sp          @this
 				mov r1, r11         @ read_size
-				add r2, sp, #0x3fc  @ dest
+				add r2, sp, #0x300  @ dest
 				mov r7, r2          @ save dest for later branch
 				mov r3, r8 	    @ size
 

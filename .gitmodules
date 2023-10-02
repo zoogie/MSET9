@@ -1,0 +1,3 @@
+[submodule "usr2arm9ldr"]
+	path = usr2arm9ldr
+	url = https://github.com/zoogie/usr2arm9ldr

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os,sys,platform,time,shutil,binascii
+VERSION="v2beta"
 
 p=platform.system()
 if p == 'Windows':	#0-win, 1-lin, 2-mac, x-win   lol go with the market leader i guess
@@ -21,7 +22,8 @@ except Exception:
 trigger="002F003A.txt"    #all 3ds ":/"
 
 #old3ds 11.8-11.17
-id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946FFAA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
+#id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946FFAA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
+id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
 
 haxid1=bytes.fromhex(id1_haxstr) #ID1 - arm injected payload in readable format
 haxid1=haxid1.decode("utf-16le")
@@ -35,8 +37,8 @@ oldtag="_oldid1"
 mode=0 #0 setup state, 1 hax state
 id0_count=0
 
-home_menu=[0x8f,0x98,0x82]  #us,eu,jp
-mii_maker=[0x217,0x227,0x207]
+home_menu=[0x8f,0x98,0x82,0xA1,0xA9,0xB1]  #us,eu,jp,ch,kr,tw
+mii_maker=[0x217,0x227,0x207,0x267,0x277,0x287] #us,eu,jp,ch,kr,tw
 
 if not os.path.exists("Nintendo 3DS/"):
 	print("Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
@@ -67,6 +69,8 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 
 def setup():
 	global mode, id1_path, id1_root, id1
+	menu_ok=0
+	mii_ok=0
 	print("Setting up...", end='')
 	if mode:
 		print("Already setup!")
@@ -90,10 +94,14 @@ def setup():
 		if os.path.exists(temp):
 			#print(temp,haxid1_path+"/extdata/00000000/%08X" % i)
 			shutil.copytree(temp,haxid1_path+"/extdata/00000000/%08X" % i)
+			menu_ok+=1
+	assert(menu_ok==1)
 	for i in mii_maker:
 		temp=ext_root+"/%08X" % i
 		if os.path.exists(temp):
 			shutil.copytree(temp,haxid1_path+"/extdata/00000000/%08X" % i)	
+			mii_ok+=1
+	assert(mii_ok==1)
 	
 	if os.path.exists(id1_path):
 		os.rename(id1_path, id1_path+oldtag)
@@ -127,7 +135,7 @@ def delete():
 def remove():
 	global mode, id1_path, id1_root, id1
 	print("Removing...", end='')
-	if mode==0:
+	if not os.path.exists(id1_root+"/"+haxid1) and (os.path.exists(id1_path) and oldtag not in id1_path):
 		print("Nothing to remove!")
 		return
 	if os.path.exists(id1_path) and oldtag in id1_path:
@@ -182,7 +190,7 @@ if OPSYS == 0:				#windows
 else:						#linux or mac
 	_ = os.system('clear')
 	
-print("MSET9 SETUP by zoogie")
+print("MSET9 %s SETUP by zoogie" % VERSION)
 
 print("-- Please type in a number then hit return --\n")
 print("1. Setup MSET9")
