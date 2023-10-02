@@ -89,6 +89,9 @@ def setup():
 			if softv == 3:
 				open(id1_path+"/dbs/title.db", "x").close()
 				open(id1_path+"/dbs/import.db", "x").close()
+			
+			print("Come again after resetting the database in settings!!")
+			sys.exit(0)
 		else:
 			print(f"you said \"{inp}\" :(")
 			sys.exit(0)
