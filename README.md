@@ -5,7 +5,7 @@
 - Aspargas2 (the Black Cat) for asm help in ID1gen as well!
 - TuxSH for usr2arm9ldr and some good advice!
 
-https://zoogie.github.io/web/m9/(%20%CD%A1%C2%B0%20%CD%9C%CA%96%20%CD%A1%C2%B0).webm
+[MSET9 in action](https://zoogie.github.io/web/m9/(%20%CD%A1%C2%B0%20%CD%9C%CA%96%20%CD%A1%C2%B0).webm)
 
 ## What it is
 This is an ARM9 primary exploit for 3DS that can be launched with only filename data added to the inserted SD card. 
