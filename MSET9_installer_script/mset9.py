@@ -78,24 +78,24 @@ def setup():
 	softv = softcheck(id1_path+"/dbs/title.db", 0x31e400, 0, 1)
 	softv +=softcheck(id1_path+"/dbs/import.db", 0x31e400, 0, 2)
 	if softv > 0:
-		inp = input(("Create it/them now? (type yes/no)"))
-		if inp.lower() == 'yes' or inp.lower() == 'y':
-			if not "dbs" in os.listdir(id1_path):
-				os.mkdir(id1_path+"/dbs")
-			if softv == 1:
-				open(id1_path+"/dbs/title.db", "x").close()
-			if softv == 2:
-				open(id1_path+"/dbs/import.db", "x").close()
-			if softv == 3:
-				open(id1_path+"/dbs/title.db", "x").close()
-				open(id1_path+"/dbs/import.db", "x").close()
-			
-			print("Come again after resetting the database in settings!!")
-			sys.exit(0)
-		else:
-			print(f"you said \"{inp}\" :(")
-			sys.exit(0)
+		if not (os.path.exists(id1_path+"/dbs/import.db") or os.path.exists(id1_path+"/dbs/title.db")):
+			inp = input(("Create them now? (type yes/no)"))
+			if inp.lower() == 'yes' or inp.lower() == 'y':
+				if not os.path.exists(id1_path+"/dbs"):
+					os.mkdir(id1_path+"/dbs")
+				if softv == 1:
+					open(id1_path+"/dbs/title.db", "x").close()
+				if softv == 2:
+					open(id1_path+"/dbs/import.db", "x").close()
+				if softv == 3:
+					open(id1_path+"/dbs/title.db", "x").close()
+					open(id1_path+"/dbs/import.db", "x").close()
 
+				print("Come again after resetting the database in settings!!")
+			sys.exit(0)
+		print("Invalid database,\nplease reset it in settings -> data management -> nintendo 3ds -> software first before coming back")
+		sys.exit(0)
+	
 	if os.path.exists(id1_path+"/extdata/"+trigger):
 		os.remove(id1_path+"/extdata/"+trigger)
 	if not os.path.exists(id1_root+"/"+haxid1):
