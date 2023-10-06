@@ -1,6 +1,15 @@
 #!/usr/bin/python3
 import os,sys,platform,time,shutil,binascii
-VERSION="v2beta"
+VERSION="v3beta"
+
+''' USER OPTIONS '''
+MODE=0
+# MODE TYPE     FIRMWARE
+# 0:   OLD3DS / 11.8 - 11.17
+# 1:   NEW3DS / 11.8 - 11.17
+# 2:   OLD3DS / 11.4 - 11.7
+# 3:   NEW3DS / 11.4 - 11.7
+''' TODO - TUI this? '''
 
 p=platform.system()
 if p == 'Windows':	#0-win, 1-lin, 2-mac, x-win   lol go with the market leader i guess
@@ -22,8 +31,25 @@ except Exception:
 trigger="002F003A.txt"    #all 3ds ":/"
 
 #old3ds 11.8-11.17
-#id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946FFAA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
-id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
+if MODE == 0:
+	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
+	model_str="OLD3DS"
+	firmrange_str="11.8-11.17"
+elif MODE == 1:
+	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A005085DCE0408730064006D00630000900A0862003900"
+	model_str="NEW3DS"
+	firmrange_str="11.8-11.17"
+elif MODE == 2:
+	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08499E050899CC0408730064006D00630000900A0862003900"
+	model_str="OLD3DS"
+	firmrange_str="11.4-11.7"
+elif MODE == 3:
+	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
+	model_str="NEW3DS"
+	firmrange_str="11.4-11.7"
+else:
+	print("What is wrong with the elf?")
+	sys.exit(0)
 
 haxid1=bytes.fromhex(id1_haxstr) #ID1 - arm injected payload in readable format
 haxid1=haxid1.decode("utf-16le")
@@ -33,9 +59,10 @@ id1_root=""
 id1_path=""
 
 ext_root=""
-oldtag="_oldid1"
+oldtag="_user-id1"
 mode=0 #0 setup state, 1 hax state
 id0_count=0
+id0_list=[]
 
 home_menu=[0x8f,0x98,0x82,0xA1,0xA9,0xB1]  #us,eu,jp,ch,kr,tw
 mii_maker=[0x217,0x227,0x207,0x267,0x277,0x287] #us,eu,jp,ch,kr,tw
@@ -51,7 +78,7 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 	for name in files:
 		pass
 	for name in dirs:
-		if haxid1 not in name and len(name[:32]) == 32:
+		if "sdmc" not in name and len(name[:32]) == 32:
 			try:
 				temp=int(name[:32],16)
 			except:
@@ -65,6 +92,16 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 						mode=1
 				else:
 					id0_count+=1
+					id0_list.append(os.path.join(root, name))
+		if "sdmc" in name and len(name) == 32:
+				print("Yikes, don't change modes in the middle of MSET9!")
+				print("Make sure to run option 4, Remove MSET9 before you change modes!")
+				time.sleep(2)
+				print("Removing mismatched haxid1 ...")
+				shutil.rmtree(os.path.join(root, name))
+				print("done.")
+				time.sleep(3)
+				
 
 
 def setup():
@@ -220,16 +257,22 @@ if id0_count == 0:
 	print("NOT \n%s" % cwd)
 	time.sleep(10)
 	sys.exit(0)
+
+print("Detected ID0(s):")
+for i in id0_list:
+	print(i)
+print("")
 assert(id0_count == 1)
 
 if OPSYS == 0:				#windows
 	_ = os.system('cls')
 else:						#linux or mac
 	_ = os.system('clear')
-	
-print("MSET9 %s SETUP by zoogie" % VERSION)
 
-print("-- Please type in a number then hit return --\n")
+print("MSET9 %s SETUP by zoogie" % VERSION)
+print("%s %s" % (model_str,firmrange_str))
+
+print("\n-- Please type in a number then hit return --\n")
 print("1. Setup MSET9")
 print("2. Inject trigger file %s" % trigger)
 print("3. Delete trigger file %s" % trigger)
