@@ -94,6 +94,7 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 					id0_count+=1
 					id0_list.append(os.path.join(root, name))
 		if "sdmc" in name and len(name) == 32:
+			if haxid1 != name:	
 				print("Yikes, don't change modes in the middle of MSET9!")
 				print("Make sure to run option 4, Remove MSET9 before you change modes!")
 				time.sleep(2)

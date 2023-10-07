@@ -16,12 +16,12 @@ When FS_EnumerateExtData is called by MSET (System Settings) to parse 3DS extdat
 While mostly leading to null derefs, in one specific context, ARM9 jumps directly to the ID1 string being held nearby in ARM9 memory. By chance, the 3DS doesn't discern what characters are used for the ID1 directory name on the SD, only requiring exactly 32 chars. This allows an attacker to insert arm instructions into the unicode ID1 dirname and take control of ARM9, and thus, full control of the 3DS.
 
 ## Can I do it?
--- You need an old3ds 11.8-11.17, any region (new3ds will be coming at some point)<br>
+-- You need a 3ds 11.4-11.17, any region (probably, haven't tested them all)<br>
 -- A USB to SD reader<br>
--- Windows/Linux PC (this might be expanded to MAC at some point)<br>
+-- Windows/Linux PC (this might be expanded to MAC and/or Android at some point, if possible)<br>
 
 ## Directions
-In release archive. It may seem long and complex but it really isn't that bad. People who have trouble following directions will struggle though.<br>
+In release archive. It may seem long and complex but it really isn't that bad (the above demo video is just under 90 seconds). People who have trouble following directions will struggle though.<br>
 
 ## Troubleshooting
 - [mset9.py shows error ".../title.db doesn't exist on sd card"?] Inside sdmc:/Nintendo 3DS/ID0/ID1/dbs, create empty files title.db and import.db. You need to create the dbs folder first. Now go to System Settings -> Data Management -> Nintendo 3DS -> Software and say yes to the prompts to build your database files. Now redo everything from the start.
