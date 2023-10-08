@@ -89,6 +89,7 @@ oldtag="_user-id1"
 mode=0 #0 setup state, 1 hax state
 id0_count=0
 id0_list=[]
+finish_remove=0
 
 home_menu=[0x8f,0x98,0x82,0xA1,0xA9,0xB1]  #us,eu,jp,ch,kr,tw
 mii_maker=[0x217,0x227,0x207,0x267,0x277,0x287] #us,eu,jp,ch,kr,tw
@@ -128,6 +129,7 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 				shutil.rmtree(os.path.join(root, name))
 				print("done.")
 				time.sleep(3)
+				finish_remove=1
 				
 
 
@@ -274,6 +276,8 @@ def reapply_cwd():
 		print("Couldn't reapply cwd, is sdcard reinserted?")
 		return False
 
+if finish_remove:
+	remove()
 check("boot9strap/boot9strap.firm", 0, 0x08129c1f)
 #check("Nintendo 3DS/Private/00020400/phtcache.bin", 0x7f53c, 0)
 check("boot.firm", 0, 0)
