@@ -2,15 +2,6 @@
 import os,sys,platform,time,shutil,binascii
 VERSION="v3beta"
 
-''' USER OPTIONS '''
-MODE=0
-# MODE TYPE     FIRMWARE
-# 0:   OLD3DS / 11.8 - 11.17
-# 1:   NEW3DS / 11.8 - 11.17
-# 2:   OLD3DS / 11.4 - 11.7
-# 3:   NEW3DS / 11.4 - 11.7
-''' TODO - TUI this? '''
-
 p=platform.system()
 if p == 'Windows':	#0-win, 1-lin, 2-mac, x-win   lol go with the market leader i guess
 	OPSYS=0
@@ -27,6 +18,41 @@ try:
 except Exception:
 	print("Failed to set cwd: " + cwd)
 	exit(1)
+
+if OPSYS == 0:				#windows
+	_ = os.system('cls')
+else:						#linux or mac
+	_ = os.system('clear')
+
+print("MSET9 %s SETUP by zoogie" % VERSION)
+print("What is your console model and version?")
+print("Old 3DS has two shoulder buttons (L and R)")
+print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
+print("\n-- Please type in a number then hit return --\n")
+print("1. Old 3DS, 11.8.0 to 11.17.0")
+print("2. New 3DS, 11.8.0 to 11.17.0")
+print("3. Old 3DS, 11.4.0 to 11.7.0")
+print("4. New 3DS, 11.4.0 to 11.7.0")
+
+while 1:
+	try:
+		command = int(input('>>>'))
+	except:
+		command = 42
+	if command   == 1:
+		MODE=0
+		break
+	elif command == 2:
+		MODE=1
+		break
+	elif command == 3:
+		MODE=2
+		break
+	elif command == 4:
+		MODE=3
+		break
+	else:
+		print("Invalid input, try again.")
 
 trigger="002F003A.txt"    #all 3ds ":/"
 
@@ -301,6 +327,6 @@ while 1:
 		print("Goodbye!")
 		break
 	else:
-		print("What you say?")
+		print("Invalid input, try again.")
 
 time.sleep(2)
