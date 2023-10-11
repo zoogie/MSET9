@@ -186,7 +186,10 @@ def setup():
 		if os.path.exists(temp):
 			shutil.copytree(temp,haxid1_path+"/extdata/00000000/%08X" % i)	
 			mii_ok+=1
-	assert(mii_ok==1)
+	if mii_ok != 1:
+		print("\nMii Maker extdata not found! Come back after running Mii Maker once")
+		remove()
+		sys.exit(0)
 	
 	if os.path.exists(id1_path):
 		os.rename(id1_path, id1_path+oldtag)
