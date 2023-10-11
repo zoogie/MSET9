@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os,sys,platform,time,shutil,binascii
-VERSION="v3beta"
+VERSION="v1.0"
 
 p=platform.system()
 if p == 'Windows':	#0-win, 1-lin, 2-mac, x-win   lol go with the market leader i guess
@@ -293,7 +293,10 @@ print("Detected ID0(s):")
 for i in id0_list:
 	print(i)
 print("")
-assert(id0_count == 1)
+if id0_count != 1:
+	print("You don't have 1 ID0 in your Nintendo 3DS folder, you have %d!" % id0_count)
+	print("Consult:\nhttps://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9\nfor help!")
+	sys.exit(0)
 
 if OPSYS == 0:				#windows
 	_ = os.system('cls')
@@ -307,7 +310,7 @@ print("\n-- Please type in a number then hit return --\n")
 print("1. Setup MSET9")
 print("2. Inject trigger file %s" % trigger)
 print("3. Delete trigger file %s" % trigger)
-print("4. Remove MSET9, restore original ID1")
+print("4. Remove MSET9, DO NOT FORGET to run this after you finish the exploit!")
 print("5. Exit")
 
 while 1:
