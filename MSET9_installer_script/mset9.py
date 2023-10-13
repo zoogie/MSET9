@@ -8,7 +8,7 @@ print(cwd)
 try:
 	os.chdir(cwd)
 except Exception:
-	print("Failed to set cwd: " + cwd)
+	print("Error 11: Failed to set cwd: " + cwd)
 	exit(1)
 
 def clearScreen():
@@ -61,7 +61,7 @@ while 1:
 	else:
 		print("Invalid input, try again.")
 
-trigger = "002F003A.txt"  # all 3ds ":/"
+trigger = "002F003A.txt"  # all 3ds ":/" in hex
 
 hackedId1 = bytes.fromhex(hackedId1Encoded).decode("utf-16le")  # ID1 - arm injected payload in readable format
 id1 = ""
@@ -80,8 +80,15 @@ miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,t
 
 # Make sure we're running from the right spot
 if not os.path.exists("Nintendo 3DS/"):
-	print("Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
+	print("Error 1: Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
 	print(f"Current dir: {cwd}")
+	time.sleep(10)
+	sys.exit(0)
+
+writeable = os.access(cwd, os.W_OK)
+if not writeable:
+	print("Error 2: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
+	print("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
 	time.sleep(10)
 	sys.exit(0)
 
@@ -115,7 +122,7 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 		if "sdmc" in name and len(name) == 32:
 			# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
 			if hackedId1 != name:
-				print("Yikes, don't change console version in the middle of MSET9!")
+				print("Error 3: don't change console version in the middle of MSET9!")
 				print("Make sure to run option 4, Remove MSET9 before you change modes!")
 				time.sleep(2)
 				print("Removing mismatched haxid1...")
@@ -129,11 +136,14 @@ def setup():
 	global haxState, realId1Path, id0, id1
 	menuExtdataGood = False
 	miiExtdataGood = False
+	homeDataPath = ""
+	miiDataPath = ""
+
 
 	# Ensure we aren't already configured.
 	print("Setting up...")
 	if haxState:
-		print("Already setup!")
+		print("Already setup, run option 2!")
 		return
 	
 	# Ensure data management databases exist
@@ -156,46 +166,58 @@ def setup():
 				print("Created empty databases.")
 			else:
 				print("Didn't create empty databases.")
-		print("\nplease reset the database files in settings -> data management -> nintendo 3ds -> software first before coming back!")
+		print("please reset the database files in settings -> data management -> nintendo 3ds -> software first before coming back!")
 		print("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
 		sys.exit(0)
 
 	if os.path.exists(realId1Path + "/extdata/" + trigger):
 		os.remove(realId1Path + "/extdata/" + trigger)
 
+	extdataRoot = realId1Path + "/extdata/00000000"
+
+	for i in homeMenuExtdata:
+		extdataRegionCheck = extdataRoot + f"/{i:08X}"
+		if os.path.exists(extdataRegionCheck):
+			#print(temp,hackedId1Path+f"/extdata/00000000/{i:08X}")
+			homeDataPath = extdataRegionCheck
+			menuExtdataGood = True
+			break
+	
+	if not menuExtdataGood:
+		print("Error 4: No Home Menu Data!")
+		print("This shouldn't really happen, Put the sd card back in your console.")
+		print("Press the home settings icon in the top left, then resume from Section I step 7.")
+		sys.exit(0)
+
+	for i in miiMakerExtdata:
+		extdataRegionCheck = extdataRoot + f"/{i:08X}"
+		if os.path.exists(extdataRegionCheck):
+			#shutil.copytree(temp, hackedId1Path + f"/extdata/00000000/{i:08X}")
+			miiDataPath = extdataRegionCheck
+			miiExtdataGood = True
+			break
+
+	if not miiExtdataGood:
+		print("Err 5: No Mii Maker Data!")
+		print("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
+		sys.exit(0)
+
+	# Currently: make this error safe
 	# Create the hacked id1 folder
-	hackedId1Path = id0 + "/" + hackedId1
-	os.mkdir(hackedId1Path)
-	os.mkdir(hackedId1Path + "/extdata")
-	os.mkdir(hackedId1Path + "/extdata/00000000")
+	if not os.path.exists(id0 + "/" + hackedId1):
+		hackedId1Path = id0 + "/" + hackedId1
+		os.mkdir(hackedId1Path)
+		os.mkdir(hackedId1Path + "/extdata")
+		os.mkdir(hackedId1Path + "/extdata/00000000")
+
 
 	if not os.path.exists(hackedId1Path + "/dbs"):
 		shutil.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
 
-	extdataRoot = realId1Path + "/extdata/00000000"
+	# *now* we can copy the extdata to the hacked path instead of failing with a half copied folder
+	shutil.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{i:08X}")
+	shutil.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{i:08X}")
 
-	for i in homeMenuExtdata:
-		temp = extdataRoot + f"/{i:08X}"
-		if os.path.exists(temp):
-			#print(temp,hackedId1Path+f"/extdata/00000000/{i:08X}")
-			shutil.copytree(temp, hackedId1Path + f"/extdata/00000000/{i:08X}")
-			menuExtdataGood = True
-	if not menuExtdataGood:
-		print("No Home Menu Data!")
-		print("This shouldn't really happen, Put the sd card back in your console.")
-		print("Press the home settings icon in the top left, then resume from Section I step 7.")
-		sys.exit(1)
-
-	for i in miiMakerExtdata:
-		temp = extdataRoot + f"/{i:08X}"
-		if os.path.exists(temp):
-			shutil.copytree(temp, hackedId1Path + f"/extdata/00000000/{i:08X}")
-			miiExtdataGood = True
-
-	if not miiExtdataGood:
-		print("No Mii Maker Data!")
-		print("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
-		sys.exit(1)
 
 	if os.path.exists(realId1Path):
 		os.rename(realId1Path, realId1Path + realId1BackupTag)
@@ -208,7 +230,7 @@ def setup():
 
 def inject():
 	if haxState == 0:
-		print("Run setup first!")
+		print("Please run option 2 first!")
 		return
 
 	print("Injecting... ", end="")
@@ -222,13 +244,13 @@ def inject():
 
 def delete():
 	if haxState == 0:
-		print("Run setup first!")
+		print("Run option 1 first!")
 		return
-	print("Deleting...", end="")
+	print("Deleting... ")
 	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
 	if os.path.exists(triggerFilePath):
 		os.remove(triggerFilePath)
-	print(" done.")
+	print("done.")
 
 
 def remove():
@@ -270,18 +292,18 @@ def softcheck(keyfile, expectedSize, crc32, retval):
 # Checks if the file exists, and optionally checks the size and crc32
 def check(keyfile, expectedSize = None, crc32 = None):
 	if not os.path.exists(keyfile):
-		print(f"{keyfile} does not exist on SD card!")
+		print(f"Error 8: {keyfile} does not exist on SD card!")
 		sys.exit(0)
 	elif expectedSize:
 		fileSize = os.path.getsize(keyfile)
 		if expectedSize != fileSize:
-			print(f"{keyfile} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
+			print(f"Error 9: {keyfile} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
 			sys.exit(0)
 	elif crc32:
 		with open(keyfile, "rb") as f:
 			checksum = binascii.crc32(f.read())
 			if crc32 != checksum:
-				print(f"{keyfile} was not recognized as the correct file")
+				print(f"Error 10: {keyfile} was not recognized as the correct file")
 				f.close()
 				sys.exit(0)
 			f.close()
@@ -292,7 +314,7 @@ def reapplyWorkingDir():
 		os.chdir(cwd)
 		return True
 	except Exception:
-		print("Couldn't reapply cwd, is sdcard reinserted?")
+		print("Error 12: Couldn't reapply cwd, is sdcard reinserted?")
 		return False
 
 if shouldRemoveHax:
@@ -307,7 +329,7 @@ check("b9")
 check("SafeB9S.bin")
 
 if id0Count == 0:
-	print("You're supposed to be running this on the 3DS SD card root!")
+	print("Error 6: You're supposed to be running this on the 3DS SD card root!")
 	print(f"NOT {cwd}")
 	time.sleep(10)
 	sys.exit(0)
@@ -317,7 +339,7 @@ for i in id0List:
 	print(i)
 print("")
 if id0Count != 1:
-	print(f"You don't have 1 ID0 in your Nintendo 3DS folder, you have {id0Count}!")
+	print(f"Error 7: You don't have 1 ID0 in your Nintendo 3DS folder, you have {id0Count}!")
 	print("Consult:\nhttps://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9\nfor help!")
 	sys.exit(0)
 

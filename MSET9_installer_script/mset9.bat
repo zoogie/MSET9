@@ -1,8 +1,10 @@
-py -V >nul 2>&1 && (
-    py -3 mset9.py
-) || (
+py -V > nul
+if %errorlevel% NEQ 0 (
     echo Python 3 is not installed.
     echo Please install Python 3 and try again.
     echo https://www.python.org/downloads/
+    echo.
+    pause
+    exit
 )
-pause
+py -3 mset9.py
