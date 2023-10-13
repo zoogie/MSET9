@@ -1,17 +1,9 @@
 #!/usr/bin/python3
-import os,sys,platform,time,shutil,binascii
-VERSION="v1.0"
+import os, sys, platform, time, shutil, binascii
 
-p=platform.system()
-if p == 'Windows':	#0-win, 1-lin, 2-mac, x-win   lol go with the market leader i guess
-	OPSYS=0
-elif p == 'Linux':
-	OPSYS=1
-elif p == 'Darwin': 
-	OPSYS=2
-else:
-	OPSYS=0
-cwd = os.path.dirname(os.path.abspath(__file__))  
+VERSION = "v1.1"
+
+cwd = os.path.dirname(os.path.abspath(__file__))
 print(cwd)
 try:
 	os.chdir(cwd)
@@ -19,12 +11,14 @@ except Exception:
 	print("Failed to set cwd: " + cwd)
 	exit(1)
 
-if OPSYS == 0:				#windows
-	_ = os.system('cls')
-else:						#linux or mac
-	_ = os.system('clear')
+def clearScreen():
+	if platform.system() == "Windows":
+		os.system("cls")
+	else:
+		os.system("clear")
 
-print("MSET9 %s SETUP by zoogie" % VERSION)
+clearScreen()
+print(f"MSET9 {VERSION} SETUP by zoogie")
 print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
@@ -34,241 +28,266 @@ print("2. New 3DS, 11.8.0 to 11.17.0")
 print("3. Old 3DS, 11.4.0 to 11.7.0")
 print("4. New 3DS, 11.4.0 to 11.7.0")
 
+hackedId1Encoded, consoleModel, consoleFirmware = "", "", ""
 while 1:
 	try:
-		command = int(input('>>>'))
+		sysModelVerSelect = int(input(">>>"))
 	except:
-		command = 42
-	if command   == 1:
-		MODE=0
+		sysModelVerSelect = 42
+	if sysModelVerSelect == 1:
+		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900"
+		consoleModel = "OLD3DS"
+		consoleFirmware = "11.8-11.17"
 		break
-	elif command == 2:
-		MODE=1
+
+	if sysModelVerSelect == 2:
+		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A005085DCE0408730064006D00630000900A0862003900"
+		consoleModel = "NEW3DS"
+		consoleFirmware = "11.8-11.17"
 		break
-	elif command == 3:
-		MODE=2
+
+	if sysModelVerSelect == 3:
+		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08499E050899CC0408730064006D00630000900A0862003900"
+		consoleModel = "OLD3DS"
+		consoleFirmware = "11.4-11.7"
 		break
-	elif command == 4:
-		MODE=3
+
+	if sysModelVerSelect == 4:
+		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
+		consoleModel = "NEW3DS"
+		consoleFirmware = "11.4-11.7"
 		break
+
 	else:
 		print("Invalid input, try again.")
 
-trigger="002F003A.txt"    #all 3ds ":/"
+trigger = "002F003A.txt"  # all 3ds ":/"
 
-#old3ds 11.8-11.17
-if MODE == 0:
-	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900" 
-	model_str="OLD3DS"
-	firmrange_str="11.8-11.17"
-elif MODE == 1:
-	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A005085DCE0408730064006D00630000900A0862003900"
-	model_str="NEW3DS"
-	firmrange_str="11.8-11.17"
-elif MODE == 2:
-	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08499E050899CC0408730064006D00630000900A0862003900"
-	model_str="OLD3DS"
-	firmrange_str="11.4-11.7"
-elif MODE == 3:
-	id1_haxstr="FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
-	model_str="NEW3DS"
-	firmrange_str="11.4-11.7"
-else:
-	print("What is wrong with the elf?")
-	sys.exit(0)
+hackedId1 = bytes.fromhex(hackedId1Encoded).decode("utf-16le")  # ID1 - arm injected payload in readable format
+id1 = ""
+id0 = ""
+realId1Path = ""
 
-haxid1=bytes.fromhex(id1_haxstr) #ID1 - arm injected payload in readable format
-haxid1=haxid1.decode("utf-16le")
-haxid1_path=""
-id1=""
-id1_root=""
-id1_path=""
+extdataRoot = ""
+realId1BackupTag = "_user-id1"
+haxState = 0  # 0 setup state, 1 hax state
+id0Count = 0
+id0List = []
+shouldRemoveHax = 0
 
-ext_root=""
-oldtag="_user-id1"
-mode=0 #0 setup state, 1 hax state
-id0_count=0
-id0_list=[]
-finish_remove=0
+homeMenuExtdata = [0x8F, 0x98, 0x82, 0xA1, 0xA9, 0xB1]  # us,eu,jp,ch,kr,tw
+miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,tw
 
-home_menu=[0x8f,0x98,0x82,0xA1,0xA9,0xB1]  #us,eu,jp,ch,kr,tw
-mii_maker=[0x217,0x227,0x207,0x267,0x277,0x287] #us,eu,jp,ch,kr,tw
-
+# Make sure we're running from the right spot
 if not os.path.exists("Nintendo 3DS/"):
 	print("Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
-	print("Current dir: %s" % cwd)
+	print(f"Current dir: {cwd}")
 	time.sleep(10)
 	sys.exit(0)
-	
+
 
 for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
-	for name in files:
-		pass
 	for name in dirs:
+		# If the name doesn't contain sdmc (Ignores MSET9 exploit folder)
 		if "sdmc" not in name and len(name[:32]) == 32:
 			try:
-				temp=int(name[:32],16)
+				# Check to see if the file name encodes as an int (is hex only)
+				hexVerify = int(name[:32], 16)
 			except:
 				continue
-			if type(temp) is int:
-				if os.path.exists(os.path.join(root, name)+"/extdata"):
-					id1=name
-					id1_root=root
-					id1_path=os.path.join(root, name)
-					if oldtag in name:
-						mode=1
+			if type(hexVerify) is int:
+				# Check if the folder (which is either id1 or id0) has the extdata folder
+				# if it does, it's an id1 folder
+				if os.path.exists(os.path.join(root, name) + "/extdata"):
+					id1 = name
+					id0 = root
+					realId1Path = os.path.join(root, name)
+
+					if realId1BackupTag in name:
+						haxState = 1
+
+				# Otherwise, add it to the id0 list because we need to make sure we only have one id0
 				else:
-					id0_count+=1
-					id0_list.append(os.path.join(root, name))
+					id0Count += 1
+					id0List.append(os.path.join(root, name))
+
+		# CHeck if we have an MSET9 Hacked id1 folder
 		if "sdmc" in name and len(name) == 32:
-			if haxid1 != name:	
-				print("Yikes, don't change modes in the middle of MSET9!")
+			# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
+			if hackedId1 != name:
+				print("Yikes, don't change console version in the middle of MSET9!")
 				print("Make sure to run option 4, Remove MSET9 before you change modes!")
 				time.sleep(2)
-				print("Removing mismatched haxid1 ...")
+				print("Removing mismatched haxid1...")
 				shutil.rmtree(os.path.join(root, name))
 				print("done.")
 				time.sleep(3)
-				finish_remove=1
-				
+				shouldRemoveHax = 1
 
 
 def setup():
-	global mode, id1_path, id1_root, id1
-	menu_ok=0
-	mii_ok=0
-	print("Setting up...", end='')
-	if mode:
+	global haxState, realId1Path, id0, id1
+	menuExtdataGood = False
+	miiExtdataGood = False
+
+	# Ensure we aren't already configured.
+	print("Setting up...")
+	if haxState:
 		print("Already setup!")
 		return
-	softv = softcheck(id1_path+"/dbs/title.db", 0x31e400, 0, 1)
-	softv +=softcheck(id1_path+"/dbs/import.db", 0x31e400, 0, 2)
-	if softv > 0:
-		if not (os.path.exists(id1_path+"/dbs/import.db") or os.path.exists(id1_path+"/dbs/title.db")):
-			inp = input(("Create them now? (type yes/no)"))
-			if inp.lower() == 'yes' or inp.lower() == 'y':
-				if not os.path.exists(id1_path+"/dbs"):
-					os.mkdir(id1_path+"/dbs")
-				if softv == 1:
-					open(id1_path+"/dbs/title.db", "x").close()
-				if softv == 2:
-					open(id1_path+"/dbs/import.db", "x").close()
-				if softv == 3:
-					open(id1_path+"/dbs/title.db", "x").close()
-					open(id1_path+"/dbs/import.db", "x").close()
+	
+	# Ensure data management databases exist
+	checkTitledb = softcheck(realId1Path + "/dbs/title.db", 0x31E400, 0, 1)
+	checkImportdb = softcheck(realId1Path + "/dbs/import.db", 0x31E400, 0, 1)
+	if checkTitledb or checkImportdb:
+		if not (
+			os.path.exists(realId1Path + "/dbs/import.db")
+			or os.path.exists(realId1Path + "/dbs/title.db")
+		):
+			dbGenInput = input(("Create empty databases now? (type yes/no)")).lower()
+			if dbGenInput == "yes" or "y":
+				if not os.path.exists(realId1Path + "/dbs"):
+					os.mkdir(realId1Path + "/dbs")
+				if checkTitledb:
+					open(realId1Path + "/dbs/title.db", "x").close()
+				if checkImportdb:
+					open(realId1Path + "/dbs/import.db", "x").close()
 
-				print("Come again after resetting the database in settings!!")
-			sys.exit(0)
-		print("Invalid database,\nplease reset it in settings -> data management -> nintendo 3ds -> software first before coming back")
+				print("Created empty databases.")
+			else:
+				print("Didn't create empty databases.")
+		print("\nplease reset the database files in settings -> data management -> nintendo 3ds -> software first before coming back!")
+		print("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
 		sys.exit(0)
-	
-	if os.path.exists(id1_path+"/extdata/"+trigger):
-		os.remove(id1_path+"/extdata/"+trigger)
-	if not os.path.exists(id1_root+"/"+haxid1):
-		haxid1_path=id1_root+"/"+haxid1
-		os.mkdir(haxid1_path)
-		os.mkdir(haxid1_path+"/extdata")
-		os.mkdir(haxid1_path+"/extdata/00000000")
-	if not os.path.exists(haxid1_path+"/dbs"):
-		shutil.copytree(id1_path+"/dbs",haxid1_path+"/dbs")
-	
-	ext_root=id1_path+"/extdata/00000000"
-	
-	for i in home_menu:
-		temp=ext_root+"/%08X" % i
+
+	if os.path.exists(realId1Path + "/extdata/" + trigger):
+		os.remove(realId1Path + "/extdata/" + trigger)
+
+	# Create the hacked id1 folder
+	hackedId1Path = id0 + "/" + hackedId1
+	os.mkdir(hackedId1Path)
+	os.mkdir(hackedId1Path + "/extdata")
+	os.mkdir(hackedId1Path + "/extdata/00000000")
+
+	if not os.path.exists(hackedId1Path + "/dbs"):
+		shutil.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
+
+	extdataRoot = realId1Path + "/extdata/00000000"
+
+	for i in homeMenuExtdata:
+		temp = extdataRoot + f"/{i:08X}"
 		if os.path.exists(temp):
-			#print(temp,haxid1_path+"/extdata/00000000/%08X" % i)
-			shutil.copytree(temp,haxid1_path+"/extdata/00000000/%08X" % i)
-			menu_ok+=1
-	assert(menu_ok==1)
-	for i in mii_maker:
-		temp=ext_root+"/%08X" % i
+			#print(temp,hackedId1Path+f"/extdata/00000000/{i:08X}")
+			shutil.copytree(temp, hackedId1Path + f"/extdata/00000000/{i:08X}")
+			menuExtdataGood = True
+	if not menuExtdataGood:
+		print("No Home Menu Data!")
+		print("This shouldn't really happen, Put the sd card back in your console.")
+		print("Press the home settings icon in the top left, then resume from Section I step 7.")
+		sys.exit(1)
+
+	for i in miiMakerExtdata:
+		temp = extdataRoot + f"/{i:08X}"
 		if os.path.exists(temp):
-			shutil.copytree(temp,haxid1_path+"/extdata/00000000/%08X" % i)	
-			mii_ok+=1
-	assert(mii_ok==1)
-	
-	if os.path.exists(id1_path):
-		os.rename(id1_path, id1_path+oldtag)
-	id1+=oldtag
-	id1_path=id1_root+"/"+id1
-	mode=1
-	print(" done.")
-		
+			shutil.copytree(temp, hackedId1Path + f"/extdata/00000000/{i:08X}")
+			miiExtdataGood = True
+
+	if not miiExtdataGood:
+		print("No Mii Maker Data!")
+		print("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
+		sys.exit(1)
+
+	if os.path.exists(realId1Path):
+		os.rename(realId1Path, realId1Path + realId1BackupTag)
+
+	id1 += realId1BackupTag
+	realId1Path = f"{id0}/{id1}"
+	haxState = 1
+	print("done.")
+
+
 def inject():
-	if mode==0:
-		print("Run setup first!")	
+	if haxState == 0:
+		print("Run setup first!")
 		return
-	print("Injecting...", end='')
-	trigger_path=id1_root+"/"+haxid1+"/extdata/"+trigger
-	if not os.path.exists(trigger_path):
-		with open(trigger_path,"w") as f:
+
+	print("Injecting... ", end="")
+	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
+	if not os.path.exists(triggerFilePath):
+		with open(triggerFilePath, "w") as f:
 			f.write("plz be haxxed mister arm9, thx")
 			f.close()
-	print(" done.")
+	print("done.")
+
 
 def delete():
-	if mode==0:
-		print("Run setup first!")	
+	if haxState == 0:
+		print("Run setup first!")
 		return
-	print("Deleting...", end='')
-	trigger_path=id1_root+"/"+haxid1+"/extdata/"+trigger
-	if os.path.exists(trigger_path):
-		os.remove(trigger_path)
+	print("Deleting...", end="")
+	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
+	if os.path.exists(triggerFilePath):
+		os.remove(triggerFilePath)
 	print(" done.")
+
 
 def remove():
-	global mode, id1_path, id1_root, id1
-	print("Removing...", end='')
-	if not os.path.exists(id1_root+"/"+haxid1) and (os.path.exists(id1_path) and oldtag not in id1_path):
+	global haxState, realId1Path, id0, id1
+	print("Removing... ", end="")
+	if not os.path.exists(id0 + "/" + hackedId1) and (os.path.exists(realId1Path) and realId1BackupTag not in realId1Path):
 		print("Nothing to remove!")
 		return
-	if os.path.exists(id1_path) and oldtag in id1_path:
-		os.rename(id1_path, id1_root+"/"+id1[:32])
-	#print(id1_path, id1_root+"/"+id1[:32])
-	if os.path.exists(id1_root+"/"+haxid1):
-		shutil.rmtree(id1_root+"/"+haxid1)
-	id1=id1[:32]
-	id1_path=id1_root+"/"+id1
-	mode=0
-	print(" done.")
+	if os.path.exists(realId1Path) and realId1BackupTag in realId1Path:
+		os.rename(realId1Path, id0 + "/" + id1[:32])
+	# print(id1_path, id1_root+"/"+id1[:32])
+	if os.path.exists(id0 + "/" + hackedId1):
+		shutil.rmtree(id0 + "/" + hackedId1)
+	id1 = id1[:32]
+	realId1Path = id0 + "/" + id1
+	haxState = 0
+	print("done.")
 
-def softcheck(keyfile, size, crc32, retval):
+
+def softcheck(keyfile, expectedSize, crc32, retval):
 	if not os.path.exists(keyfile):
-		print("%s \ndoes not exist on SD card!" % keyfile)
+		print(f"{keyfile} does not exist on SD card!")
 		return retval
-	elif size:
-		s=os.path.getsize(keyfile)
-		if size != s:
-			print("%s \nis size %08X, not expected %08X" % (keyfile,s,size))
+	elif expectedSize:
+		fileSize = os.path.getsize(keyfile)
+		if expectedSize != fileSize:
+			print(f"{keyfile} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
 			return retval
 	elif crc32:
-		with open(keyfile,"rb") as f:
-			temp=f.read()
-		c=binascii.crc32(temp)
-		if crc32 != c:
-			print("%s \n was not recognized as the correct file" % keyfile)
-			return retval
+		with open(keyfile, "rb") as f:
+			checksum = binascii.crc32(f.read())
+			if crc32 != checksum:
+				print(f"{keyfile} was not recognized as the correct file")
+				f.close()
+				return retval
+			f.close()
 	return 0
 
-def check(keyfile, size, crc32):
-		if not os.path.exists(keyfile):
-			print("%s \ndoes not exist on SD card!" % keyfile)
+# Checks if the file exists, and optionally checks the size and crc32
+def check(keyfile, expectedSize = None, crc32 = None):
+	if not os.path.exists(keyfile):
+		print(f"{keyfile} does not exist on SD card!")
+		sys.exit(0)
+	elif expectedSize:
+		fileSize = os.path.getsize(keyfile)
+		if expectedSize != fileSize:
+			print(f"{keyfile} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
 			sys.exit(0)
-		elif size:
-			s=os.path.getsize(keyfile)
-			if size != s:
-				print("%s \nis size %08X, not expected %08X" % (keyfile,s,size))
+	elif crc32:
+		with open(keyfile, "rb") as f:
+			checksum = binascii.crc32(f.read())
+			if crc32 != checksum:
+				print(f"{keyfile} was not recognized as the correct file")
+				f.close()
 				sys.exit(0)
-		elif crc32:
-			with open(keyfile,"rb") as f:
-				temp=f.read()
-			c=binascii.crc32(temp)
-			if crc32 != c:
-				print("%s \n was not recognized as the correct file" % keyfile)
-				sys.exit(0)
+			f.close()
 
-def reapply_cwd():
+
+def reapplyWorkingDir():
 	try:
 		os.chdir(cwd)
 		return True
@@ -276,61 +295,62 @@ def reapply_cwd():
 		print("Couldn't reapply cwd, is sdcard reinserted?")
 		return False
 
-if finish_remove:
+if shouldRemoveHax:
 	remove()
-check("boot9strap/boot9strap.firm", 0, 0x08129c1f)
-#check("Nintendo 3DS/Private/00020400/phtcache.bin", 0x7f53c, 0)
-check("boot.firm", 0, 0)
-check("boot.3dsx", 0, 0)
-check("b9", 0, 0)
-if id0_count == 0:
-	print("\nYou're supposed to be running this on the 3DS SD card!")
-	print("NOT \n%s" % cwd)
+
+# Ensure we have the required files (people extracted the entire zip to their sdcard)
+check("boot9strap/boot9strap.firm", 0, 0x08129C1F)
+# check("Nintendo 3DS/Private/00020400/phtcache.bin", 0x7f53c, 0)
+check("boot.firm")
+check("boot.3dsx")
+check("b9")
+check("SafeB9S.bin")
+
+if id0Count == 0:
+	print("You're supposed to be running this on the 3DS SD card root!")
+	print(f"NOT {cwd}")
 	time.sleep(10)
 	sys.exit(0)
 
 print("Detected ID0(s):")
-for i in id0_list:
+for i in id0List:
 	print(i)
 print("")
-if id0_count != 1:
-	print("You don't have 1 ID0 in your Nintendo 3DS folder, you have %d!" % id0_count)
+if id0Count != 1:
+	print(f"You don't have 1 ID0 in your Nintendo 3DS folder, you have {id0Count}!")
 	print("Consult:\nhttps://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9\nfor help!")
 	sys.exit(0)
 
-if OPSYS == 0:				#windows
-	_ = os.system('cls')
-else:						#linux or mac
-	_ = os.system('clear')
-
-print("MSET9 %s SETUP by zoogie" % VERSION)
-print("%s %s" % (model_str,firmrange_str))
+clearScreen()
+print(f"MSET9 {VERSION} SETUP by zoogie")
+print(f"Using {consoleModel} {consoleFirmware}")
 
 print("\n-- Please type in a number then hit return --\n")
 print("1. Setup MSET9")
-print("2. Inject trigger file %s" % trigger)
-print("3. Delete trigger file %s" % trigger)
+print(f"2. Inject trigger file {trigger}")
+print(f"3. Delete trigger file {trigger}")
 print("4. Remove MSET9, DO NOT FORGET to run this after you finish the exploit!")
 print("5. Exit")
 
 while 1:
 	try:
-		command = int(input('>>>'))
+		sysModelVerSelect = int(input(">>>"))
 	except:
-		command = 42
+		sysModelVerSelect = 42
 
-	if command >=1 and command <= 4 and not reapply_cwd():
-		continue # reapply_cwd already prints error if fail
-	
-	if command   == 1:
+	# Separated to maybe fix removable bug
+	if not reapplyWorkingDir():
+		continue #already prints error if fail
+
+	if sysModelVerSelect == 1:
 		setup()
-	elif command == 2:
+	elif sysModelVerSelect == 2:
 		inject()
-	elif command == 3:
-		delete()	
-	elif command == 4:
+	elif sysModelVerSelect == 3:
+		delete()
+	elif sysModelVerSelect == 4:
 		remove()
-	elif command == 5:
+	elif sysModelVerSelect == 5:
 		print("Goodbye!")
 		break
 	else:
