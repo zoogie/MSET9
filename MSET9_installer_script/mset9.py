@@ -19,12 +19,26 @@ def prinfo(content):
 	print(f"[*] {content}")
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-print(cwd)
 try:
 	os.chdir(cwd)
 except Exception:
 	prbad("Error 11: Failed to set cwd: " + cwd)
 	exit(1)
+
+# Section: insureRoot
+if not os.path.exists("Nintendo 3DS/"):
+	prbad("Error 1: Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
+	prinfo(f"Current dir: {cwd}")
+	time.sleep(10)
+	sys.exit(0)
+
+# Section: sdWritable
+writeable = os.access(cwd, os.W_OK)
+if not writeable:
+	prbad("Error 2: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
+	prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
+	sys.exit(0)
+
 
 clearScreen()
 print(f"MSET9 {VERSION} SETUP by zoogie")
@@ -98,21 +112,6 @@ regionTable = {
 	0xA9: "KOR Region",
 	0xB1: "TWN Region"
 }
-
-# Section: insureRoot
-if not os.path.exists("Nintendo 3DS/"):
-	prbad("Error 1: Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
-	prinfo(f"Current dir: {cwd}")
-	time.sleep(10)
-	sys.exit(0)
-
-# Section: sdWritable
-writeable = os.access(cwd, os.W_OK)
-if not writeable:
-	prbad("Error 2: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
-	prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
-	time.sleep(10)
-	sys.exit(0)
 
 # Section: sdwalk
 for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
