@@ -85,7 +85,6 @@ realId1BackupTag = "_user-id1"
 haxState = 0  # 0 setup state, 1 hax state
 id0Count = 0
 id0List = []
-shouldRemoveHax = 0
 
 homeMenuExtdata = [0x8F, 0x98, 0x82, 0xA1, 0xA9, 0xB1]  # us,eu,jp,ch,kr,tw
 miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,tw
@@ -139,8 +138,9 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 
 				# Otherwise, add it to the id0 list because we need to make sure we only have one id0
 				else:
-					id0Count += 1
-					id0List.append(os.path.join(root, name))
+					if len(name) == 32:
+						id0Count += 1
+						id0List.append(os.path.join(root, name))
 
 		# CHeck if we have an MSET9 Hacked id1 folder
 		if "sdmc" in name and len(name) == 32:
@@ -153,7 +153,6 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 				shutil.rmtree(os.path.join(root, name))
 				prgood("done.")
 				time.sleep(3)
-				shouldRemoveHax = 1
 
 homeDataPath, miiDataPath, homeHex, miiHex = "", "", 0x0, 0x0
 def sanity():
