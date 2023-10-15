@@ -153,9 +153,6 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 					realId1Path = os.path.join(root, name)
 					id1List.append(realId1Path)
 
-					if realId1BackupTag in name:
-						prinfo("Restoring previous Id1 backup...")
-						os.rename(realId1Path, id0 + "/" + id1[:32])
 				# Otherwise, add it to the id0 list because we need to make sure we only have one id0
 				else:
 					if len(name) == 32:
