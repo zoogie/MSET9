@@ -1,15 +1,12 @@
-Error 1: Not running on the SD Card root. /Nintendo 3DS/ not found.
-Error 2: Write protected SD Card. Ensure switch is facing up.
-Error 3: Attempting to change target console version during exploit
-Error 4: No Home Menu Extdata. Shouldn't happen pretty much ever.
-Error 5: No Mii Maker Data, follow MSET9 Troublshooting page.
-Error 6: Not running on the SD Card root. No ID0s detected.
-Error 7: Multiple ID0s, follow MSET9 Troublshooting page.
-Error 8: Missing expected file. Reextract MSET9 zip file.
-Error 9: File size does not match expected. Reextract MSET9 zip file.
-Error 10: Mismatched checksum. Redownload and Reextract MSET9 zip file.
-Error 11: Failed to initially enter the directory. This shouldn't happen pretty much ever.
-Error 12: Could not change back into SD directory. Ensure the SD Card has been reinserted.
-Error 13: Database problem. Follow the troubleshooting to reset the DBs.
+Error 01: Not running on the SD Card root. /Nintendo 3DS/ not found.
+Error 02: Write protected SD Card. Ensure switch is facing up.
+Error 03: Attempting to change target console version during exploit.
+Error 04: No Home Menu Extdata. Shouldn't happen pretty much ever.
+Error 05: No Mii Maker Data, follow MSET9 Troublshooting page.
+Error 06: Not enough free space on disk. Clean out unused files.
+Error 07: Multiple ID0s, follow MSET9 Troublshooting page.
+Error 08: Missing/Malformed file. Reextract MSET9 zip file.
+Error 09: Could not change back into SD directory. Ensure the SD Card has been reinserted.
+Error 10: Database problem. Follow the troubleshooting to reset the DBs.
 
 MSET9 Troublshooting Page: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9

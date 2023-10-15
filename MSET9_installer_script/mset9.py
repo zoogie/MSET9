@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, sys, platform, time, shutil, binascii
+import os, platform, time, shutil, binascii
 
 VERSION = "v1.1"
 
@@ -18,27 +18,47 @@ def prbad(content):
 def prinfo(content):
 	print(f"[*] {content}")
 
+def exitOnEnter(errCode = 0):
+	input("[*] Press Enter to exit...")
+	exit(errCode)
+
 cwd = os.path.dirname(os.path.abspath(__file__))
 try:
 	os.chdir(cwd)
 except Exception:
-	prbad("Error 11: Failed to set cwd: " + cwd)
-	exit(1)
+	prbad("Failed to set cwd: " + cwd)
+	prbad("This should pretty much never happen. try running the script again.")
+	exitOnEnter()
 
 # Section: insureRoot
 if not os.path.exists("Nintendo 3DS/"):
-	prbad("Error 1: Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
+	prbad("Error 01: Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
 	prinfo(f"Current dir: {cwd}")
 	time.sleep(10)
-	sys.exit(0)
+	exitOnEnter()
 
 # Section: sdWritable
 writeable = os.access(cwd, os.W_OK)
-if not writeable:
-	prbad("Error 2: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
-	prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
-	sys.exit(0)
+try: # Bodge for windows
+	with open("test.txt", "w") as f:
+		f.write("test")
+		f.close()
+	os.remove("test.txt")
+except:
+	writeable = False
 
+if not writeable:
+	prbad("Error 02: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
+	prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
+	exitOnEnter()
+
+# Section: SD card free space
+# ensure 16MB free space
+freeSpace = shutil.disk_usage(cwd).free
+if freeSpace < 16777216:
+	prbad(f"Error 06: You need at least 16MB free space on your SD card, you have {(freeSpace / 1000000):.2f} bytes!")
+	prinfo("Please free up some space and try again.")
+	exitOnEnter()
 
 clearScreen()
 print(f"MSET9 {VERSION} SETUP by zoogie")
@@ -58,7 +78,7 @@ while 1:
 	except KeyboardInterrupt:
 		print()
 		prgood("Goodbye!")
-		exit()
+		exitOnEnter()
 	except:
 		sysModelVerSelect = 42
 	if sysModelVerSelect == 1:
@@ -96,9 +116,9 @@ realId1Path = ""
 
 extdataRoot = ""
 realId1BackupTag = "_user-id1"
-haxState = 0  # 0 setup state, 1 hax state
 id0Count = 0
 id0List = []
+id1List = []
 
 homeMenuExtdata = [0x8F, 0x98, 0x82, 0xA1, 0xA9, 0xB1]  # us,eu,jp,ch,kr,tw
 miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,tw
@@ -131,10 +151,11 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 					id1 = name
 					id0 = root
 					realId1Path = os.path.join(root, name)
+					id1List.append(realId1Path)
 
 					if realId1BackupTag in name:
-						haxState = 1
-
+						prinfo("Restoring previous Id1 backup...")
+						os.rename(realId1Path, id0 + "/" + id1[:32])
 				# Otherwise, add it to the id0 list because we need to make sure we only have one id0
 				else:
 					if len(name) == 32:
@@ -145,13 +166,15 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 		if "sdmc" in name and len(name) == 32:
 			# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
 			if hackedId1 != name:
-				prbad("Error 3: don't change console version in the middle of MSET9!")
+				prbad("Error 03: don't change console version in the middle of MSET9!")
 				prbad("Make sure to run option 4, Remove MSET9 before you change modes!")
-				time.sleep(2)
 				prinfo("Removing mismatched haxid1...")
 				shutil.rmtree(os.path.join(root, name))
-				prgood("done.")
-				time.sleep(3)
+				if os.path.exists(realId1Path) and realId1BackupTag in realId1Path:
+					prinfo("Renaming original Id1...")
+					os.rename(realId1Path, id0 + "/" + id1[:32])
+				prgood("Done.")
+				
 
 homeDataPath, miiDataPath, homeHex, miiHex = "", "", 0x0, 0x0
 def sanity():
@@ -163,11 +186,16 @@ def sanity():
 	prinfo("Performing sanity checks...")
 
 	prinfo("Ensuring extracted files exist...")
-	check("boot9strap/boot9strap.firm", 0, 0x08129C1F)
-	check("boot.firm")
-	check("boot.3dsx")
-	check("b9")
-	check("SafeB9S.bin")
+	fileSanity = 0
+	fileSanity += softcheck("boot9strap/boot9strap.firm", 0, 0x08129C1F, 1)
+	fileSanity += softcheck("boot.firm", retval = 1)
+	fileSanity += softcheck("boot.3dsx", retval = 1)
+	fileSanity += softcheck("b9", retval = 1)
+	fileSanity += softcheck("SafeB9S.bin", retval = 1)
+	if fileSanity > 0:
+		prbad("Error 08: One or more files are missing or malformed!")
+		prinfo("Please extract the MSET9 zip file again, being sure to Overwrite any files.")
+		exitOnEnter()
 	prgood("All files look good!")
 
 	prinfo("Checking databases...")
@@ -189,7 +217,7 @@ def sanity():
 			prinfo("Created empty databases.")
 		prinfo("please reset the database files in settings -> data management -> nintendo 3ds -> software first before coming back!")
 		prinfo("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
-		sys.exit(0)
+		exitOnEnter()
 	else:
 		prgood("Databases look good!")
 	
@@ -210,10 +238,10 @@ def sanity():
 			break
 	
 	if not menuExtdataGood:
-		prbad("Error 4: No Home Menu Data!")
+		prbad("Error 04: No Home Menu Data!")
 		prinfo("This shouldn't really happen, Put the sd card back in your console.")
 		prinfo("Turn it on and off again, then restart the script.")
-		sys.exit(0)
+		exitOnEnter()
 	
 	prinfo("Checking for mii maker extdata...")
 	for i in miiMakerExtdata:
@@ -226,9 +254,9 @@ def sanity():
 			break
 	
 	if not miiExtdataGood:
-		prbad("Err 5: No Mii Maker Data!")
+		prbad("Error 05: No Mii Maker Data!")
 		prinfo("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
-		sys.exit(0)
+		exitOnEnter()
 
 def injection():
 	global realId1Path, id1
@@ -251,6 +279,13 @@ def injection():
 	shutil.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
 	shutil.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{miiHex:08X}")
 
+	prinfo("Injecting trigger file...")
+	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
+	if not os.path.exists(triggerFilePath):
+		with open(triggerFilePath, "w") as f:
+			f.write("plz be haxxed mister arm9, thx")
+			f.close()
+	
 	if os.path.exists(realId1Path):
 		prinfo("Backing up real Id1...")
 		os.rename(realId1Path, realId1Path + realId1BackupTag)
@@ -258,12 +293,6 @@ def injection():
 	id1 += realId1BackupTag
 	realId1Path = f"{id0}/{id1}"
 
-	prinfo("Injecting trigger file...")
-	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
-	if not os.path.exists(triggerFilePath):
-		with open(triggerFilePath, "w") as f:
-			f.write("plz be haxxed mister arm9, thx")
-			f.close()
 	prgood("Done.")
 
 def delete():
@@ -275,7 +304,7 @@ def delete():
 	prinfo("Nothing to remove!")
 
 def remove():
-	global haxState, realId1Path, id0, id1
+	global realId1Path, id0, id1
 	prinfo("Removing MSET9...")
 	if not os.path.exists(id0 + "/" + hackedId1) and (os.path.exists(realId1Path) and realId1BackupTag not in realId1Path):
 		prinfo("Nothing to remove!")
@@ -290,10 +319,9 @@ def remove():
 		shutil.rmtree(id0 + "/" + hackedId1)
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
-	haxState = 0
 	prgood("done.")
 
-def softcheck(keyfile, expectedSize, crc32, retval):
+def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	shortname = keyfile.rsplit("/")[-1]
 	if not os.path.exists(keyfile):
 		prbad(f"{shortname} does not exist on SD card!")
@@ -314,43 +342,21 @@ def softcheck(keyfile, expectedSize, crc32, retval):
 	prgood(f"{shortname} looks good!")
 	return 0
 
-def check(keyfile, expectedSize = None, crc32 = None):
-	shortname = keyfile.rsplit("/")[-1]
-	if not os.path.exists(keyfile):
-		prbad(f"Error 8: {shortname} does not exist on SD card!")
-		prinfo("Please extract the MSET9 zip file again, being sure to Overwrite any files.")
-		sys.exit(0)
-	elif expectedSize:
-		fileSize = os.path.getsize(keyfile)
-		if expectedSize != fileSize:
-			prbad(f"Error 9: {shortname} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
-			prinfo("Please extract the MSET9 zip file again, being sure to Overwrite any files.")
-			sys.exit(0)
-	elif crc32:
-		with open(keyfile, "rb") as f:
-			checksum = binascii.crc32(f.read())
-			if crc32 != checksum:
-				prbad(f"Error 10: {shortname} was not recognized as the correct file")
-				prinfo("Please extract the MSET9 zip file again, being sure to Overwrite any files.")
-				f.close()
-				sys.exit(0)
-			f.close()
-
 prinfo("Detected ID0(s):")
 for i in id0List:
 	prinfo(i)
 print()
 if id0Count != 1:
-	prbad(f"Error 7: You don't have 1 ID0 in your Nintendo 3DS folder, you have {id0Count}!")
-	prinfo("Consult:\nhttps://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9\nfor help!")
-	sys.exit(0)
+	prbad(f"Error 07: You don't have 1 ID0 in your Nintendo 3DS folder, you have {id0Count}!")
+	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
+	exitOnEnter()
 
 def reapplyWorkingDir():
 	try:
 		os.chdir(cwd)
 		return True
 	except Exception:
-		prbad("Error 12: Couldn't reapply cwd, is sdcard reinserted?")
+		prbad("Error 09: Couldn't reapply working directory, is sdcard reinserted?")
 		return False
 
 clearScreen()
@@ -373,20 +379,26 @@ while 1:
 	except:
 		sysModelVerSelect = 42
 
-	# Separated to maybe fix removable bug
-	if not reapplyWorkingDir():
-		continue #already prints error if fail
+	try:
+		os.chdir(cwd)
+	except Exception:
+		prbad("Error 09: Couldn't reapply working directory, is sdcard reinserted?")
+		exitOnEnter()
 
 	if sysModelVerSelect == 1:
 		sanity()
 		prgood("Looking good!\n")
+		exitOnEnter()
 	elif sysModelVerSelect == 2:
 		sanity()
 		injection()
+		exitOnEnter()
 	elif sysModelVerSelect == 3:
 		delete()
+		exitOnEnter()
 	elif sysModelVerSelect == 4:
 		remove()
+		exitOnEnter()
 	elif sysModelVerSelect == 5 or "exit":
 		prgood("Goodbye!")
 		break

@@ -1,3 +1,4 @@
+@echo off
 py -V > nul
 if %errorlevel% NEQ 0 (
     echo Python 3 is not installed.
