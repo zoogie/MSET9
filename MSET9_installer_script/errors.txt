@@ -11,6 +11,5 @@ Error 10: Mismatched checksum. Redownload and Reextract MSET9 zip file.
 Error 11: Failed to initially enter the directory. This shouldn't happen pretty much ever.
 Error 12: Could not change back into SD directory. Ensure the SD Card has been reinserted.
 Error 13: Database problem. Follow the troubleshooting to reset the DBs.
-Error 14: Invalid Id0. Ensure the length is 32 characters long. This shouldn't really happen.
 
 MSET9 Troublshooting Page: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9
