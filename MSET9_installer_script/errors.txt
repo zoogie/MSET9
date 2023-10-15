@@ -10,5 +10,6 @@ Error 9: File size does not match expected. Reextract MSET9 zip file.
 Error 10: Mismatched checksum. Redownload and Reextract MSET9 zip file.
 Error 11: Failed to initially enter the directory. This shouldn't happen pretty much ever.
 Error 12: Could not change back into SD directory. Ensure the SD Card has been reinserted.
+Error 13: Database problem. Follow the troubleshooting to reset the DBs.
 
 MSET9 Troublshooting Page: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9
