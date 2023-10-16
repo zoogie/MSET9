@@ -40,7 +40,7 @@ except Exception:
 # Section: insureRoot
 if not os.path.exists("Nintendo 3DS/"):
 	prbad("Error 01: Couldn't find Nintendo 3DS folder! eject the SD card, and put it back in your console.")
-	prbad("Turn it on and off again, then restart the script.")
+	prbad("Turn it on and off again, then restart the script. Make sure you are running in the SD Card root!")
 	prinfo(f"Current dir: {cwd}")
 	time.sleep(10)
 	exitOnEnter()
@@ -248,8 +248,10 @@ def injection():
 		shutil.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
 
 	prinfo("Copying extdata to hacked Id1...")
-	shutil.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
-	shutil.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{miiHex:08X}")
+	if not os.path.exists(hackedId1Path + f"/extdata/00000000/{homeHex:08X}"):
+		shutil.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
+	if not os.path.exists(hackedId1Path + f"/extdata/00000000/{miiHex:08X}"):
+		shutil.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{miiHex:08X}")
 
 	prinfo("Injecting trigger file...")
 	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
@@ -287,9 +289,10 @@ def remove():
 		os.rename(realId1Path, id0 + "/" + id1[:32])
 	# print(id1_path, id1_root+"/"+id1[:32])
 	for id1Index in range(1,5): # Attempt to remove *all* hacked id1s
-		if os.path.exists(id0 + "/" + bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")):
+		maybeHackedId = bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")
+		if os.path.exists(id0 + "/" + maybeHackedId):
 			prinfo("Deleting hacked Id1...")
-			shutil.rmtree(id0 + "/" + hackedId1)
+			shutil.rmtree(id0 + "/" + maybeHackedId)
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
 	prgood("done.")
@@ -349,9 +352,10 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 						id0Count += 1
 						id0List.append(os.path.join(root, name))
 
+	for name in dirs: # Run the check for existing install after figuring out the structure
 		# CHeck if we have an MSET9 Hacked id1 folder
 		if "sdmc" in name and len(name) == 32:
-			# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
+		# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
 			if hackedId1 != name:
 				prbad("Error 03: don't change console version in the middle of MSET9!")
 				prbad("Please restart the setup.")

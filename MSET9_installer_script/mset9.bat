@@ -1,4 +1,5 @@
 @echo off
+chcp 65001
 py -V > nul
 if %errorlevel% NEQ 0 (
     echo Python 3 is not installed.
