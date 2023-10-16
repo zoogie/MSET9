@@ -3,12 +3,6 @@ import os, platform, time, shutil, binascii
 
 VERSION = "v1.1"
 
-def clearScreen():
-	if platform.system() == "Windows":
-		os.system("cls")
-	else:
-		os.system("clear")
-
 def prgood(content):
 	print(f"[\033[0;32m✓\033[0m] {content}")
 
@@ -21,6 +15,19 @@ def prinfo(content):
 def exitOnEnter(errCode = 0):
 	input("[*] Press Enter to exit...")
 	exit(errCode)
+
+osver = platform.system()
+
+if osver == "Darwin":
+	prbad("Error 11: macOS is not supported!")
+	prinfo("Please use a Windows or Linux computer.")
+	exitOnEnter()
+
+def clearScreen():
+	if osver == "Windows":
+		os.system("cls")
+	else:
+		os.system("clear")
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 try:
@@ -117,8 +124,8 @@ realId1Path = ""
 extdataRoot = ""
 realId1BackupTag = "_user-id1"
 id0Count = 0
+id1Count = 0
 id0List = []
-id1List = []
 
 homeMenuExtdata = [0x8F, 0x98, 0x82, 0xA1, 0xA9, 0xB1]  # us,eu,jp,ch,kr,tw
 miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,tw
@@ -131,47 +138,7 @@ regionTable = {
 	0xA1: "CHN Region",
 	0xA9: "KOR Region",
 	0xB1: "TWN Region"
-}
-
-# Section: sdwalk
-for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
-
-	for name in dirs:
-		# If the name doesn't contain sdmc (Ignores MSET9 exploit folder)
-		if "sdmc" not in name and len(name[:32]) == 32:
-			try:
-				# Check to see if the file name encodes as an int (is hex only)
-				hexVerify = int(name[:32], 16)
-			except:
-				continue
-			if type(hexVerify) is int:
-				# Check if the folder (which is either id1 or id0) has the extdata folder
-				# if it does, it's an id1 folder
-				if os.path.exists(os.path.join(root, name) + "/extdata"):
-					id1 = name
-					id0 = root
-					realId1Path = os.path.join(root, name)
-					id1List.append(realId1Path)
-
-				# Otherwise, add it to the id0 list because we need to make sure we only have one id0
-				else:
-					if len(name) == 32:
-						id0Count += 1
-						id0List.append(os.path.join(root, name))
-
-		# CHeck if we have an MSET9 Hacked id1 folder
-		if "sdmc" in name and len(name) == 32:
-			# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
-			if hackedId1 != name:
-				prbad("Error 03: don't change console version in the middle of MSET9!")
-				prbad("Make sure to run option 4, Remove MSET9 before you change modes!")
-				prinfo("Removing mismatched haxid1...")
-				shutil.rmtree(os.path.join(root, name))
-				if os.path.exists(realId1Path) and realId1BackupTag in realId1Path:
-					prinfo("Renaming original Id1...")
-					os.rename(realId1Path, id0 + "/" + id1[:32])
-				prgood("Done.")
-				
+}				
 
 homeDataPath, miiDataPath, homeHex, miiHex = "", "", 0x0, 0x0
 def sanity():
@@ -199,7 +166,7 @@ def sanity():
 	checkTitledb = softcheck(realId1Path + "/dbs/title.db", 0x31E400, 0, 1)
 	checkImportdb = softcheck(realId1Path + "/dbs/import.db", 0x31E400, 0, 1)
 	if checkTitledb or checkImportdb:
-		prbad("Error 13: Database(s) malformed or missing!")
+		prbad("Error 10: Database(s) malformed or missing!")
 		if not (
 			os.path.exists(realId1Path + "/dbs/import.db")
 			or os.path.exists(realId1Path + "/dbs/title.db")
@@ -238,6 +205,7 @@ def sanity():
 		prbad("Error 04: No Home Menu Data!")
 		prinfo("This shouldn't really happen, Put the sd card back in your console.")
 		prinfo("Turn it on and off again, then restart the script.")
+		prinfo("For assistance, come visit us: https://discord.gg/nintendohomebrew")
 		exitOnEnter()
 	
 	prinfo("Checking for mii maker extdata...")
@@ -339,6 +307,50 @@ def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	prgood(f"{shortname} looks good!")
 	return 0
 
+def reapplyWorkingDir():
+	try:
+		os.chdir(cwd)
+		return True
+	except Exception:
+		prbad("Error 09: Couldn't reapply working directory, is sdcard reinserted?")
+		return False
+
+# Section: sdwalk
+for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
+
+	for name in dirs:
+		# If the name doesn't contain sdmc (Ignores MSET9 exploit folder)
+		if "sdmc" not in name and len(name[:32]) == 32:
+			try:
+				# Check to see if the file name encodes as an int (is hex only)
+				hexVerify = int(name[:32], 16)
+			except:
+				continue
+			if type(hexVerify) is int:
+				# Check if the folder (which is either id1 or id0) has the extdata folder
+				# if it does, it's an id1 folder
+				if os.path.exists(os.path.join(root, name) + "/extdata"):
+					id1Count += 1
+					id1 = name
+					id0 = root
+					realId1Path = os.path.join(root, name)
+
+				# Otherwise, add it to the id0 list because we need to make sure we only have one id0
+				else:
+					if len(name) == 32:
+						id0Count += 1
+						id0List.append(os.path.join(root, name))
+
+		# CHeck if we have an MSET9 Hacked id1 folder
+		if "sdmc" in name and len(name) == 32:
+			# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
+			if hackedId1 != name:
+				prbad("Error 03: don't change console version in the middle of MSET9!")
+				prbad("Please restart the setup.")
+				remove()
+				exitOnEnter()
+
+
 prinfo("Detected ID0(s):")
 for i in id0List:
 	prinfo(i)
@@ -348,13 +360,10 @@ if id0Count != 1:
 	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
 	exitOnEnter()
 
-def reapplyWorkingDir():
-	try:
-		os.chdir(cwd)
-		return True
-	except Exception:
-		prbad("Error 09: Couldn't reapply working directory, is sdcard reinserted?")
-		return False
+if id1Count != 1:
+	prbad(f"Error 12: You don't have 1 ID1 in your Nintendo 3DS folder, you have {id1Count}!")
+	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
+	exitOnEnter()
 
 clearScreen()
 print(f"MSET9 {VERSION} SETUP by zoogie")

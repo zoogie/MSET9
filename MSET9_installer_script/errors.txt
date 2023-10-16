@@ -8,5 +8,7 @@ Error 07: Multiple ID0s, follow MSET9 Troublshooting page.
 Error 08: Missing/Malformed file. Reextract MSET9 zip file.
 Error 09: Could not change back into SD directory. Ensure the SD Card has been reinserted.
 Error 10: Database problem. Follow the troubleshooting to reset the DBs.
+Error 11: Running as MacOS. MacOS is not supported.
+Error 12: Multiple ID1s, follow MSET9 Troublshooting page.
 
 MSET9 Troublshooting Page: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9
