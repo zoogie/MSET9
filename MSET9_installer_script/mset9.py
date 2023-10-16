@@ -78,6 +78,12 @@ print("2. New 3DS, 11.8.0 to 11.17.0")
 print("3. Old 3DS, 11.4.0 to 11.7.0")
 print("4. New 3DS, 11.4.0 to 11.7.0")
 
+encodedId1s = {
+	1: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900",
+	2: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A005085DCE0408730064006D00630000900A0862003900",
+	3: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08499E050899CC0408730064006D00630000900A0862003900",
+	4: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
+}
 hackedId1Encoded, consoleModel, consoleFirmware = "", "", ""
 while 1:
 	try:
@@ -89,25 +95,25 @@ while 1:
 	except:
 		sysModelVerSelect = 42
 	if sysModelVerSelect == 1:
-		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900"
+		hackedId1Encoded = encodedId1s[1]
 		consoleModel = "OLD3DS"
 		consoleFirmware = "11.8-11.17"
 		break
 
 	if sysModelVerSelect == 2:
-		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A005085DCE0408730064006D00630000900A0862003900"
+		hackedId1Encoded = encodedId1s[2]
 		consoleModel = "NEW3DS"
 		consoleFirmware = "11.8-11.17"
 		break
 
 	if sysModelVerSelect == 3:
-		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08499E050899CC0408730064006D00630000900A0862003900"
+		hackedId1Encoded = encodedId1s[3]
 		consoleModel = "OLD3DS"
 		consoleFirmware = "11.4-11.7"
 		break
 
 	if sysModelVerSelect == 4:
-		hackedId1Encoded = "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
+		hackedId1Encoded = encodedId1s[4]
 		consoleModel = "NEW3DS"
 		consoleFirmware = "11.4-11.7"
 		break
@@ -279,9 +285,10 @@ def remove():
 		prinfo("Renaming original Id1...")
 		os.rename(realId1Path, id0 + "/" + id1[:32])
 	# print(id1_path, id1_root+"/"+id1[:32])
-	if os.path.exists(id0 + "/" + hackedId1):
-		prinfo("Deleting hacked Id1...")
-		shutil.rmtree(id0 + "/" + hackedId1)
+	for id1Index in range(1,5): # Attempt to remove *all* hacked id1s
+		if os.path.exists(id0 + "/" + bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")):
+			prinfo("Deleting hacked Id1...")
+			shutil.rmtree(id0 + "/" + hackedId1)
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
 	prgood("done.")
