@@ -74,6 +74,7 @@ print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
 print("\n-- Please type in a number then hit return --\n")
+print("↓ Input one of these Numbers!")
 print("1. Old 3DS, 11.8.0 to 11.17.0")
 print("2. New 3DS, 11.8.0 to 11.17.0")
 print("3. Old 3DS, 11.4.0 to 11.7.0")
@@ -88,7 +89,11 @@ encodedId1s = {
 hackedId1Encoded, consoleModel, consoleFirmware = "", "", ""
 while 1:
 	try:
-		sysModelVerSelect = int(input(">>> "))
+		sysModelVerSelect = input(">>> ")
+		if sysModelVerSelect.startswith("11"):
+			prbad("Don't type the firmware version, just the selection number!")
+			sysModelVerSelect = 42
+		sysModelVerSelect = int(sysModelVerSelect)
 	except KeyboardInterrupt:
 		print()
 		prgood("Goodbye!")
@@ -120,7 +125,7 @@ while 1:
 		break
 
 	else:
-		print("Invalid input, try again.")
+		prbad("Invalid input, try again.")
 
 trigger = "002F003A.txt"  # all 3ds ":/" in hex
 hackedId1 = bytes.fromhex(hackedId1Encoded).decode("utf-16le")  # ID1 - arm injected payload in readable format
@@ -382,6 +387,7 @@ print(f"MSET9 {VERSION} SETUP by zoogie")
 print(f"Using {consoleModel} {consoleFirmware}")
 
 print("\n-- Please type in a number then hit return --\n")
+print("↓ Input one of these Numbers!")
 print("1. Perform sanity checks")
 print("2. Inject MSET9 exploit")
 print(f"3. Delete trigger file {trigger}")
