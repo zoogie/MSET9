@@ -69,7 +69,7 @@ if freeSpace < 16777216:
 	exitOnEnter()
 
 clearScreen()
-print(f"MSET9 {VERSION} SETUP by zoogie")
+print(f"MSET9 {VERSION} SETUP by zoogie and Aven")
 print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
@@ -159,7 +159,7 @@ def sanity():
 	miiExtdataGood = False
 
 	print()
-	prinfo("Performing sanity checks...")
+	prinfo("Performing validation checks...")
 
 	prinfo("Ensuring extracted files exist...")
 	fileSanity = 0
@@ -383,12 +383,12 @@ if id1Count != 1:
 	exitOnEnter()
 
 clearScreen()
-print(f"MSET9 {VERSION} SETUP by zoogie")
+print(f"MSET9 {VERSION} SETUP by zoogie and Aven")
 print(f"Using {consoleModel} {consoleFirmware}")
 
 print("\n-- Please type in a number then hit return --\n")
 print("↓ Input one of these Numbers!")
-print("1. Perform sanity checks")
+print("1. Perform validation checks")
 print("2. Inject MSET9 exploit")
 print(f"3. Delete trigger file {trigger}")
 print("4. Manually Remove MSET9")
