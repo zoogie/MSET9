@@ -39,7 +39,8 @@ except Exception:
 
 # Section: insureRoot
 if not os.path.exists("Nintendo 3DS/"):
-	prbad("Error 01: Are you sure you're running this script from the root of your SD card (right next to 'Nintendo 3DS')? You need to!")
+	prbad("Error 01: Couldn't find Nintendo 3DS folder! eject the SD card, and put it back in your console.")
+	prbad("Turn it on and off again, then restart the script.")
 	prinfo(f"Current dir: {cwd}")
 	time.sleep(10)
 	exitOnEnter()
