@@ -39,10 +39,9 @@ except Exception:
 
 # Section: insureRoot
 if not os.path.exists("Nintendo 3DS/"):
-	prbad("Error 01: Couldn't find Nintendo 3DS folder! eject the SD card, and put it back in your console.")
-	prbad("Turn it on and off again, then restart the script. Make sure you are running in the SD Card root!")
+	prbad("Error 01: Couldn't find Nintendo 3DS folder! Make sure you are running in the SD Card root!")
+	prbad("If that doesn't work, eject the SD card, and put it back in your console. Turn it on and off again, then restart the script.")
 	prinfo(f"Current dir: {cwd}")
-	time.sleep(10)
 	exitOnEnter()
 
 # Section: sdWritable
@@ -274,14 +273,6 @@ def injection():
 
 	prgood("MSET9 successfully injected!")
 
-def delete():
-	prinfo("Deleting trigger file...")
-	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
-	if os.path.exists(triggerFilePath):
-		os.remove(triggerFilePath)
-		prgood("done.")
-	prinfo("Nothing to remove!")
-
 def remove():
 	global realId1Path, id0, id1
 	prinfo("Removing MSET9...")
@@ -386,10 +377,9 @@ print(f"Using {consoleModel} {consoleFirmware}")
 print("\n-- Please type in a number then hit return --\n")
 print("↓ Input one of these Numbers!")
 print("1. Perform sanity checks")
-print("2. Inject MSET9 exploit")
-print(f"3. Delete trigger file {trigger}")
-print("4. Manually Remove MSET9")
-print("5. Exit")
+print("2. Inject MSET9 payload")
+print("3. Remove MSET9")
+print("4. Exit")
 
 while 1:
 	try:
@@ -415,12 +405,9 @@ while 1:
 		injection()
 		exitOnEnter()
 	elif sysModelVerSelect == 3:
-		delete()
-		exitOnEnter()
-	elif sysModelVerSelect == 4:
 		remove()
 		exitOnEnter()
-	elif sysModelVerSelect == 5 or "exit":
+	elif sysModelVerSelect == 4 or "exit":
 		prgood("Goodbye!")
 		break
 	else:
