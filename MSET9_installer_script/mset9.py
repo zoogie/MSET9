@@ -385,7 +385,7 @@ while 1:
 	try:
 		sysModelVerSelect = int(input(">>> "))
 	except KeyboardInterrupt:
-		sysModelVerSelect = 5 # exit on Ctrl+C
+		sysModelVerSelect = 4 # exit on Ctrl+C
 		print()
 	except:
 		sysModelVerSelect = 42
