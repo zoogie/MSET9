@@ -45,19 +45,23 @@ if not os.path.exists("Nintendo 3DS/"):
 	exitOnEnter()
 
 # Section: sdWritable
-writeable = os.access(cwd, os.W_OK)
-try: # Bodge for windows
-	with open("test.txt", "w") as f:
-		f.write("test")
-		f.close()
-	os.remove("test.txt")
-except:
-	writeable = False
+def writeProtectCheck():
+	prinfo("Checking if SD card is writeable...")
+	writeable = os.access(cwd, os.W_OK)
+	try: # Bodge for windows
+		with open("test.txt", "w") as f:
+			f.write("test")
+			f.close()
+		os.remove("test.txt")
+	except:
+		writeable = False
 
-if not writeable:
-	prbad("Error 02: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
-	prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
-	exitOnEnter()
+	if not writeable:
+		prbad("Error 02: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
+		prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
+		exitOnEnter()
+	else:
+		prgood("SD card is writeable!")
 
 # Section: SD card free space
 # ensure 16MB free space
@@ -159,6 +163,8 @@ def sanity():
 
 	print()
 	prinfo("Performing sanity checks...")
+
+	writeProtectCheck()
 
 	prinfo("Ensuring extracted files exist...")
 	fileSanity = 0
