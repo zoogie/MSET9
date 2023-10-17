@@ -286,6 +286,10 @@ def remove():
 	if os.path.exists(realId1Path) and realId1BackupTag in realId1Path:
 		prinfo("Renaming original Id1...")
 		os.rename(realId1Path, id0 + "/" + id1[:32])
+	else: 
+		prgood("Nothing to remove!")
+		return
+	
 	# print(id1_path, id1_root+"/"+id1[:32])
 	for id1Index in range(1,5): # Attempt to remove *all* hacked id1s
 		maybeHackedId = bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")
