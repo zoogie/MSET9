@@ -159,7 +159,7 @@ def sanity():
 	miiExtdataGood = False
 
 	print()
-	prinfo("Performing validation checks...")
+	prinfo("Performing sanity checks...")
 
 	prinfo("Ensuring extracted files exist...")
 	fileSanity = 0
@@ -272,7 +272,7 @@ def injection():
 	id1 += realId1BackupTag
 	realId1Path = f"{id0}/{id1}"
 
-	prgood("Done.")
+	prgood("MSET9 successfully injected!")
 
 def delete():
 	prinfo("Deleting trigger file...")
@@ -285,9 +285,6 @@ def delete():
 def remove():
 	global realId1Path, id0, id1
 	prinfo("Removing MSET9...")
-	if not os.path.exists(id0 + "/" + hackedId1) and (os.path.exists(realId1Path) and realId1BackupTag not in realId1Path):
-		prinfo("Nothing to remove!")
-		return
 
 	if os.path.exists(realId1Path) and realId1BackupTag in realId1Path:
 		prinfo("Renaming original Id1...")
@@ -300,7 +297,7 @@ def remove():
 			shutil.rmtree(id0 + "/" + maybeHackedId)
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
-	prgood("done.")
+	prgood("Successfully removed MSET9!")
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	shortname = keyfile.rsplit("/")[-1]
@@ -388,7 +385,7 @@ print(f"Using {consoleModel} {consoleFirmware}")
 
 print("\n-- Please type in a number then hit return --\n")
 print("↓ Input one of these Numbers!")
-print("1. Perform validation checks")
+print("1. Perform sanity checks")
 print("2. Inject MSET9 exploit")
 print(f"3. Delete trigger file {trigger}")
 print("4. Manually Remove MSET9")
@@ -411,7 +408,7 @@ while 1:
 
 	if sysModelVerSelect == 1:
 		sanity()
-		prgood("Looking good!\n")
+		prgood("Everything appears to be functional!\n")
 		exitOnEnter()
 	elif sysModelVerSelect == 2:
 		sanity()
