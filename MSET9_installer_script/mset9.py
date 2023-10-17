@@ -270,14 +270,13 @@ def injection():
 			f.write("plz be haxxed mister arm9, thx")
 			f.close()
 	
-	if os.path.exists(realId1Path):
-		prinfo("Backing up real Id1...")
-		if not os.path.exists(realId1Path + realId1BackupTag):
-			os.rename(realId1Path, realId1Path + realId1BackupTag)
-			id1 += realId1BackupTag
-			realId1Path = f"{id0}/{id1}"
-		else:
-			prinfo("Skipping backup because a backup already exists!")
+	if os.path.exists(realId1Path) and realId1BackupTag not in realId1Path:
+		prinfo("Backing up real Id1..."):
+		os.rename(realId1Path, realId1Path + realId1BackupTag)
+		id1 += realId1BackupTag
+		realId1Path = f"{id0}/{id1}"
+	else:
+		prinfo("Skipping backup because a backup already exists!")
 
 
 	prgood("MSET9 successfully injected!")
