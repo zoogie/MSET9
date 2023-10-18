@@ -1,5 +1,6 @@
 What are these unloved things here?
 
 mini_b9s_installer - old, handcrafted b9s installer brought out of retirement from unSAFE_MODE to MSET9. Then promptly put back in retirement if favor of usr2arm9ldr (b9) because it's goofy and hacky :p
-build.py - this creates a phtcache.bin suitable for piggybacking payloads into FCRAM. Loading direct from ID1 became possible so I retired this too. Still very effective despite that.
+index.html & lenny.js - loads further payloads into FCRAM for id1 to jump to. this was the first idea on how to present a payload reachable by mset9 since initially couldn't fit an fs loader in id1. pretty reliable but kind of unsettling, and not to mention: online required. yuck!
+build.py - this creates a phtcache.bin suitable for piggybacking payloads into FCRAM. Loading files direct from ID1 became possible so I retired this too. Still very effective despite that.
 mset9.py - due to the feature-laden rewrite offered by Aven, I put my somewhat messy and beta-ish version in semi-retirement here. this script manages the install and removal of mset9 to the 3ds sd card.
