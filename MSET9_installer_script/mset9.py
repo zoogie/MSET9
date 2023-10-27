@@ -40,7 +40,7 @@ except Exception:
 # Section: insureRoot
 if not os.path.exists("Nintendo 3DS/"):
 	prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
-	prbad("If that doesn't work, eject the SD card, and put it back in your console. Turn it on and off again, then rerun the script.")
+	prbad("If that doesn't work, eject the SD card, and put it back in your console. Turn it on and off again, then rerun this script.")
 	prinfo(f"Current dir: {cwd}")
 	exitOnEnter()
 
@@ -196,7 +196,7 @@ def sanity():
 				open(realId1Path + "/dbs/import.db", "x").close()
 
 			prinfo("Created empty databases.")
-		prinfo("Please initialize the title database by navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then re-run this script.")
+		prinfo("Please initialize the title database by navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then rerun this script.")
 		prinfo("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
 		exitOnEnter()
 	else:
@@ -221,7 +221,7 @@ def sanity():
 	if not menuExtdataGood:
 		prbad("Error 04: No HOME Menu data!")
 		prinfo("This shouldn't really happen.")
-		prinfo("Put the SD card back into your console, turn it on and off again, then restart the script.")
+		prinfo("Put the SD card back into your console, turn it on and off again, then rerun this script.")
 		prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
 		exitOnEnter()
 	
@@ -362,7 +362,7 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 		if "sdmc" in name and len(name) == 32:
 		# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
 			if hackedId1 != name:
-				prbad("Error 03: Don't change console version in the middle of MSET9!")
+				prbad("Error 03: Don't change console model/version in the middle of MSET9!")
 				prbad("Please restart the setup.")
 				remove()
 				exitOnEnter()
