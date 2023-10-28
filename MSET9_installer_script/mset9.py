@@ -34,13 +34,13 @@ try:
 	os.chdir(cwd)
 except Exception:
 	prbad("Failed to set cwd: " + cwd)
-	prbad("This should pretty much never happen. try running the script again.")
+	prbad("This should pretty much never happen. Try running the script again.")
 	exitOnEnter()
 
 # Section: insureRoot
 if not os.path.exists("Nintendo 3DS/"):
-	prbad("Error 01: Couldn't find Nintendo 3DS folder! Make sure you are running in the SD Card root!")
-	prbad("If that doesn't work, eject the SD card, and put it back in your console. Turn it on and off again, then restart the script.")
+	prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
+	prbad("If that doesn't work, eject the SD card, and put it back in your console. Turn it on and off again, then rerun this script.")
 	prinfo(f"Current dir: {cwd}")
 	exitOnEnter()
 
@@ -57,7 +57,7 @@ def writeProtectCheck():
 		writeable = False
 
 	if not writeable:
-		prbad("Error 02: Your sd is write protected! Please ensure the switch on the side of your SD card is facing upwards.")
+		prbad("Error 02: Your SD card is write protected! If using a full size SD card, ensure that the lock switch is facing upwards.")
 		prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
 		exitOnEnter()
 	else:
@@ -77,7 +77,7 @@ print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
 print("\n-- Please type in a number then hit return --\n")
-print("↓ Input one of these Numbers!")
+print("↓ Input one of these numbers!")
 print("1. Old 3DS, 11.8.0 to 11.17.0")
 print("2. New 3DS, 11.8.0 to 11.17.0")
 print("3. Old 3DS, 11.4.0 to 11.7.0")
@@ -128,7 +128,7 @@ while 1:
 		break
 
 	else:
-		prbad("Invalid input, try again.")
+		prbad("Invalid input, try again. Valid inputs: 1, 2, 3, 4")
 
 trigger = "002F003A.txt"  # all 3ds ":/" in hex
 hackedId1 = bytes.fromhex(hackedId1Encoded).decode("utf-16le")  # ID1 - arm injected payload in readable format
@@ -175,7 +175,7 @@ def sanity():
 	fileSanity += softcheck("SafeB9S.bin", retval = 1)
 	if fileSanity > 0:
 		prbad("Error 08: One or more files are missing or malformed!")
-		prinfo("Please extract the MSET9 zip file again, being sure to Overwrite any files.")
+		prinfo("Please re-extract the MSET9 zip file, overwriting any existing files when prompted.")
 		exitOnEnter()
 	prgood("All files look good!")
 
@@ -196,7 +196,7 @@ def sanity():
 				open(realId1Path + "/dbs/import.db", "x").close()
 
 			prinfo("Created empty databases.")
-		prinfo("please reset the database files in settings -> data management -> nintendo 3ds -> software first before coming back!")
+		prinfo("Please initialize the title database by navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then rerun this script.")
 		prinfo("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
 		exitOnEnter()
 	else:
@@ -208,35 +208,35 @@ def sanity():
 	
 	extdataRoot = realId1Path + "/extdata/00000000"
 
-	prinfo("Checking for home menu extdata...")
+	prinfo("Checking for HOME Menu extdata...")
 	for i in homeMenuExtdata:
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
 		if os.path.exists(extdataRegionCheck):
-			prgood(f"Detected {regionTable[i]} home data!")
+			prgood(f"Detected {regionTable[i]} HOME Menu data!")
 			homeHex = i
 			homeDataPath = extdataRegionCheck
 			menuExtdataGood = True
 			break
 	
 	if not menuExtdataGood:
-		prbad("Error 04: No Home Menu Data!")
-		prinfo("This shouldn't really happen, Put the sd card back in your console.")
-		prinfo("Turn it on and off again, then restart the script.")
-		prinfo("For assistance, come visit us: https://discord.gg/nintendohomebrew")
+		prbad("Error 04: No HOME Menu data!")
+		prinfo("This shouldn't really happen.")
+		prinfo("Put the SD card back into your console, turn it on and off again, then rerun this script.")
+		prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
 		exitOnEnter()
 	
-	prinfo("Checking for mii maker extdata...")
+	prinfo("Checking for Mii Maker extdata...")
 	for i in miiMakerExtdata:
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
 		if os.path.exists(extdataRegionCheck):
-			prgood("Found mii maker data!")
+			prgood("Found Mii Maker data!")
 			miiHex = i
 			miiDataPath = extdataRegionCheck
 			miiExtdataGood = True
 			break
 	
 	if not miiExtdataGood:
-		prbad("Error 05: No Mii Maker Data!")
+		prbad("Error 05: No Mii Maker data!")
 		prinfo("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
 		exitOnEnter()
 
@@ -244,20 +244,20 @@ def injection():
 	global realId1Path, id1
 
 	if not os.path.exists(id0 + "/" + hackedId1):
-		prinfo("Creating hacked Id1...")
+		prinfo("Creating hacked ID1...")
 		hackedId1Path = id0 + "/" + hackedId1
 		os.mkdir(hackedId1Path)
 		os.mkdir(hackedId1Path + "/extdata")
 		os.mkdir(hackedId1Path + "/extdata/00000000")
 	else:
-		prinfo("Reusing existing hacked Id1...")
+		prinfo("Reusing existing hacked ID1...")
 		hackedId1Path = id0 + "/" + hackedId1
 
 	if not os.path.exists(hackedId1Path + "/dbs"):
-		prinfo("Copying databases to hacked Id1...")
+		prinfo("Copying databases to hacked ID1...")
 		shutil.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
 
-	prinfo("Copying extdata to hacked Id1...")
+	prinfo("Copying extdata to hacked ID1...")
 	if not os.path.exists(hackedId1Path + f"/extdata/00000000/{homeHex:08X}"):
 		shutil.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
 	if not os.path.exists(hackedId1Path + f"/extdata/00000000/{miiHex:08X}"):
@@ -271,7 +271,7 @@ def injection():
 			f.close()
 	
 	if os.path.exists(realId1Path) and realId1BackupTag not in realId1Path:
-		prinfo("Backing up real Id1...")
+		prinfo("Backing up real ID1...")
 		os.rename(realId1Path, realId1Path + realId1BackupTag)
 		id1 += realId1BackupTag
 		realId1Path = f"{id0}/{id1}"
@@ -296,7 +296,7 @@ def remove():
 	for id1Index in range(1,5): # Attempt to remove *all* hacked id1s
 		maybeHackedId = bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")
 		if os.path.exists(id0 + "/" + maybeHackedId):
-			prinfo("Deleting hacked Id1...")
+			prinfo("Deleting hacked ID1...")
 			shutil.rmtree(id0 + "/" + maybeHackedId)
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
@@ -328,7 +328,7 @@ def reapplyWorkingDir():
 		os.chdir(cwd)
 		return True
 	except Exception:
-		prbad("Error 09: Couldn't reapply working directory, is sdcard reinserted?")
+		prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
 		return False
 
 # Section: sdwalk
@@ -358,11 +358,11 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 						id0List.append(os.path.join(root, name))
 
 	for name in dirs: # Run the check for existing install after figuring out the structure
-		# CHeck if we have an MSET9 Hacked id1 folder
+		# Check if we have an MSET9 Hacked id1 folder
 		if "sdmc" in name and len(name) == 32:
 		# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
 			if hackedId1 != name:
-				prbad("Error 03: don't change console version in the middle of MSET9!")
+				prbad("Error 03: Don't change console model/version in the middle of MSET9!")
 				prbad("Please restart the setup.")
 				remove()
 				exitOnEnter()
@@ -387,7 +387,7 @@ print(f"MSET9 {VERSION} SETUP by zoogie and Aven")
 print(f"Using {consoleModel} {consoleFirmware}")
 
 print("\n-- Please type in a number then hit return --\n")
-print("↓ Input one of these Numbers!")
+print("↓ Input one of these numbers!")
 print("1. Perform sanity checks")
 print("2. Inject MSET9 payload")
 print("3. Remove MSET9")
@@ -405,7 +405,7 @@ while 1:
 	try:
 		os.chdir(cwd)
 	except Exception:
-		prbad("Error 09: Couldn't reapply working directory, is sdcard reinserted?")
+		prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
 		exitOnEnter()
 
 	if sysModelVerSelect == 1:
@@ -423,6 +423,6 @@ while 1:
 		prgood("Goodbye!")
 		break
 	else:
-		prinfo("Invalid input, try again.")
+		prinfo("Invalid input, try again. Valid inputs: 1, 2, 3, 4")
 
 time.sleep(2)
