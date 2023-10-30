@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, platform, time, shutil, binascii
+import abc, os, platform, time, binascii
 
 VERSION = "v1.1"
 
@@ -16,12 +16,132 @@ def exitOnEnter(errCode = 0):
 	input("[*] Press Enter to exit...")
 	exit(errCode)
 
+# wrapper for fs operations. can use pyfilesystem2 directly,
+# but try to avoid extra dependency on non-darwin system
+class FSWrapper(metaclass=abc.ABCMeta):
+	@abc.abstractmethod
+	def exists(self, path):
+		pass
+	@abc.abstractmethod
+	def mkdir(self, path):
+		pass
+	@abc.abstractmethod
+	def open(self, path, mode='r'):
+		pass
+	@abc.abstractmethod
+	def getsize(self, path):
+		pass
+	@abc.abstractmethod
+	def remove(self, path):
+		pass
+	@abc.abstractmethod
+	def rename(self, src, dst):
+		pass
+	@abc.abstractmethod
+	def rmtree(self, path):
+		pass
+	@abc.abstractmethod
+	def copytree(self, src, dst):
+		pass
+	@abc.abstractmethod
+	def walk(self, path, topdown=False):
+		pass
+	@abc.abstractmethod
+	def is_writable(self):
+		pass
+	@abc.abstractmethod
+	def freespace(self):
+		pass
+	@abc.abstractmethod
+	def reload(self):
+		pass
+
 osver = platform.system()
 
 if osver == "Darwin":
+	# ======== macOS / iOS ========
 	prbad("Error 11: macOS is not supported!")
 	prinfo("Please use a Windows or Linux computer.")
 	exitOnEnter()
+	from pyfatfs.PyFatFS import PyFatFS
+	from pyfatfs.EightDotThree import EightDotThree
+
+	class FatFS(FSWrapper):
+		def __init__(self, device):
+			pass
+		def exists(self, path):
+			pass
+		def mkdir(self, path):
+			pass
+		def open(self, path, mode='r'):
+			pass
+		def getsize(self, path):
+			pass
+		def remove(self, path):
+			pass
+		def rename(self, src, dst):
+			pass
+		def rmtree(self, path):
+			pass
+		def copytree(self, src, dst):
+			pass
+		def walk(self, path, topdown=False):
+			pass
+		def is_writable(self):
+			pass
+		def freespace(self):
+			pass
+		def reload(self):
+			pass
+
+else:
+	# ======== Windows / Linux ========
+	import shutil
+
+	class OSFS(FSWrapper):
+		def __init__(self, root):
+			self.root = root
+			self.reload()
+		def abs(self, path):
+			return os.path.join(self.root, path)
+		def exists(self, path):
+			return os.path.exists(self.abs(path))
+		def mkdir(self, path):
+			os.mkdir(self.abs(path))
+		def open(self, path, mode='r'):
+			return open(self.abs(path), mode)
+		def getsize(self, path):
+			return os.path.getsize(self.abs(path))
+		def remove(self, path):
+			os.remove(self.abs(path))
+		def rename(self, src, dst):
+			os.rename(self.abs(src), self.abs(dst))
+		def rmtree(self, path):
+			shutil.rmtree(self.abs(path))
+		def copytree(self, src, dst):
+			shutil.copytree(self.abs(src), self.abs(dst))
+		def walk(self, path, topdown=False):
+			return os.walk(self.abs(path), topdown=topdown)
+		def is_writable(self):
+			writable = os.access(self.root, os.W_OK)
+			try: # Bodge for windows
+				with open("test.txt", "w") as f:
+					f.write("test")
+					f.close()
+				os.remove("test.txt")
+			except:
+				writable = False
+			return writable
+		def freespace(self):
+			return shutil.disk_usage(self.root).free
+		def reload(self):
+			try:
+				os.chdir(self.root)
+			except Exception:
+				prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
+				exitOnEnter()
+
+	fs = OSFS(os.path.dirname(os.path.abspath(__file__)))
 
 def clearScreen():
 	if osver == "Windows":
@@ -29,16 +149,8 @@ def clearScreen():
 	else:
 		os.system("clear")
 
-cwd = os.path.dirname(os.path.abspath(__file__))
-try:
-	os.chdir(cwd)
-except Exception:
-	prbad("Failed to set cwd: " + cwd)
-	prbad("This should pretty much never happen. Try running the script again.")
-	exitOnEnter()
-
 # Section: insureRoot
-if not os.path.exists("Nintendo 3DS/"):
+if not fs.exists("Nintendo 3DS/"):
 	prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
 	prbad("If that doesn't work, eject the SD card, and put it back in your console. Turn it on and off again, then rerun this script.")
 	prinfo(f"Current dir: {cwd}")
@@ -46,17 +158,9 @@ if not os.path.exists("Nintendo 3DS/"):
 
 # Section: sdWritable
 def writeProtectCheck():
+	global fs
 	prinfo("Checking if SD card is writeable...")
-	writeable = os.access(cwd, os.W_OK)
-	try: # Bodge for windows
-		with open("test.txt", "w") as f:
-			f.write("test")
-			f.close()
-		os.remove("test.txt")
-	except:
-		writeable = False
-
-	if not writeable:
+	if not fs.is_writable():
 		prbad("Error 02: Your SD card is write protected! If using a full size SD card, ensure that the lock switch is facing upwards.")
 		prinfo("Visual aid: https://nintendohomebrew.com/assets/img/nhmemes/sdlock.png")
 		exitOnEnter()
@@ -65,8 +169,7 @@ def writeProtectCheck():
 
 # Section: SD card free space
 # ensure 16MB free space
-freeSpace = shutil.disk_usage(cwd).free
-if freeSpace < 16777216:
+if fs.freespace() < 16777216:
 	prbad(f"Error 06: You need at least 16MB free space on your SD card, you have {(freeSpace / 1000000):.2f} bytes!")
 	prinfo("Please free up some space and try again.")
 	exitOnEnter()
@@ -157,7 +260,7 @@ regionTable = {
 
 homeDataPath, miiDataPath, homeHex, miiHex = "", "", 0x0, 0x0
 def sanity():
-	global haxState, realId1Path, id0, id1, homeDataPath, miiDataPath, homeHex, miiHex
+	global fs, haxState, realId1Path, id0, id1, homeDataPath, miiDataPath, homeHex, miiHex
 	menuExtdataGood = False
 	miiExtdataGood = False
 
@@ -185,11 +288,11 @@ def sanity():
 	if checkTitledb or checkImportdb:
 		prbad("Error 10: Database(s) malformed or missing!")
 		if not (
-			os.path.exists(realId1Path + "/dbs/import.db")
-			or os.path.exists(realId1Path + "/dbs/title.db")
+			fs.exists(realId1Path + "/dbs/import.db")
+			or fs.exists(realId1Path + "/dbs/title.db")
 		):
-			if not os.path.exists(realId1Path + "/dbs"):
-				os.mkdir(realId1Path + "/dbs")
+			if not fs.exists(realId1Path + "/dbs"):
+				fs.mkdir(realId1Path + "/dbs")
 			if checkTitledb:
 				open(realId1Path + "/dbs/title.db", "x").close()
 			if checkImportdb:
@@ -202,16 +305,16 @@ def sanity():
 	else:
 		prgood("Databases look good!")
 	
-	if os.path.exists(realId1Path + "/extdata/" + trigger):
+	if fs.exists(realId1Path + "/extdata/" + trigger):
 		prinfo("Removing stale trigger...")
-		os.remove(realId1Path + "/extdata/" + trigger)
+		fs.remove(realId1Path + "/extdata/" + trigger)
 	
 	extdataRoot = realId1Path + "/extdata/00000000"
 
 	prinfo("Checking for HOME Menu extdata...")
 	for i in homeMenuExtdata:
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
-		if os.path.exists(extdataRegionCheck):
+		if fs.exists(extdataRegionCheck):
 			prgood(f"Detected {regionTable[i]} HOME Menu data!")
 			homeHex = i
 			homeDataPath = extdataRegionCheck
@@ -228,7 +331,7 @@ def sanity():
 	prinfo("Checking for Mii Maker extdata...")
 	for i in miiMakerExtdata:
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
-		if os.path.exists(extdataRegionCheck):
+		if fs.exists(extdataRegionCheck):
 			prgood("Found Mii Maker data!")
 			miiHex = i
 			miiDataPath = extdataRegionCheck
@@ -241,38 +344,38 @@ def sanity():
 		exitOnEnter()
 
 def injection():
-	global realId1Path, id1
+	global fs, realId1Path, id1
 
-	if not os.path.exists(id0 + "/" + hackedId1):
+	if not fs.exists(id0 + "/" + hackedId1):
 		prinfo("Creating hacked ID1...")
 		hackedId1Path = id0 + "/" + hackedId1
-		os.mkdir(hackedId1Path)
-		os.mkdir(hackedId1Path + "/extdata")
-		os.mkdir(hackedId1Path + "/extdata/00000000")
+		fs.mkdir(hackedId1Path)
+		fs.mkdir(hackedId1Path + "/extdata")
+		fs.mkdir(hackedId1Path + "/extdata/00000000")
 	else:
 		prinfo("Reusing existing hacked ID1...")
 		hackedId1Path = id0 + "/" + hackedId1
 
-	if not os.path.exists(hackedId1Path + "/dbs"):
+	if not fs.exists(hackedId1Path + "/dbs"):
 		prinfo("Copying databases to hacked ID1...")
 		shutil.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
 
 	prinfo("Copying extdata to hacked ID1...")
-	if not os.path.exists(hackedId1Path + f"/extdata/00000000/{homeHex:08X}"):
+	if not fs.exists(hackedId1Path + f"/extdata/00000000/{homeHex:08X}"):
 		shutil.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
-	if not os.path.exists(hackedId1Path + f"/extdata/00000000/{miiHex:08X}"):
+	if not fs.exists(hackedId1Path + f"/extdata/00000000/{miiHex:08X}"):
 		shutil.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{miiHex:08X}")
 
 	prinfo("Injecting trigger file...")
 	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
-	if not os.path.exists(triggerFilePath):
-		with open(triggerFilePath, "w") as f:
+	if not fs.exists(triggerFilePath):
+		with fs.open(triggerFilePath, "w") as f:
 			f.write("plz be haxxed mister arm9, thx")
 			f.close()
 	
-	if os.path.exists(realId1Path) and realId1BackupTag not in realId1Path:
+	if fs.exists(realId1Path) and realId1BackupTag not in realId1Path:
 		prinfo("Backing up real ID1...")
-		os.rename(realId1Path, realId1Path + realId1BackupTag)
+		fs.rename(realId1Path, realId1Path + realId1BackupTag)
 		id1 += realId1BackupTag
 		realId1Path = f"{id0}/{id1}"
 	else:
@@ -282,12 +385,12 @@ def injection():
 	prgood("MSET9 successfully injected!")
 
 def remove():
-	global realId1Path, id0, id1
+	global fs, realId1Path, id0, id1
 	prinfo("Removing MSET9...")
 
-	if os.path.exists(realId1Path) and realId1BackupTag in realId1Path:
+	if fs.exists(realId1Path) and realId1BackupTag in realId1Path:
 		prinfo("Renaming original Id1...")
-		os.rename(realId1Path, id0 + "/" + id1[:32])
+		fs.rename(realId1Path, id0 + "/" + id1[:32])
 	else: 
 		prgood("Nothing to remove!")
 		return
@@ -295,7 +398,7 @@ def remove():
 	# print(id1_path, id1_root+"/"+id1[:32])
 	for id1Index in range(1,5): # Attempt to remove *all* hacked id1s
 		maybeHackedId = bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")
-		if os.path.exists(id0 + "/" + maybeHackedId):
+		if fs.exists(id0 + "/" + maybeHackedId):
 			prinfo("Deleting hacked ID1...")
 			shutil.rmtree(id0 + "/" + maybeHackedId)
 	id1 = id1[:32]
@@ -303,12 +406,13 @@ def remove():
 	prgood("Successfully removed MSET9!")
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
+	global fs
 	shortname = keyfile.rsplit("/")[-1]
-	if not os.path.exists(keyfile):
+	if not fs.exists(keyfile):
 		prbad(f"{shortname} does not exist on SD card!")
 		return retval
 	elif expectedSize:
-		fileSize = os.path.getsize(keyfile)
+		fileSize = fs.getsize(keyfile)
 		if expectedSize != fileSize:
 			prbad(f"{shortname} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
 			return retval
@@ -323,16 +427,8 @@ def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	prgood(f"{shortname} looks good!")
 	return 0
 
-def reapplyWorkingDir():
-	try:
-		os.chdir(cwd)
-		return True
-	except Exception:
-		prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
-		return False
-
 # Section: sdwalk
-for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
+for root, dirs, files in fs.walk("Nintendo 3DS/", topdown=True):
 
 	for name in dirs:
 		# If the name doesn't contain sdmc (Ignores MSET9 exploit folder)
@@ -345,7 +441,7 @@ for root, dirs, files in os.walk("Nintendo 3DS/", topdown=True):
 			if type(hexVerify) is int:
 				# Check if the folder (which is either id1 or id0) has the extdata folder
 				# if it does, it's an id1 folder
-				if os.path.exists(os.path.join(root, name) + "/extdata"):
+				if fs.exists(os.path.join(root, name) + "/extdata"):
 					id1Count += 1
 					id1 = name
 					id0 = root
@@ -402,11 +498,7 @@ while 1:
 	except:
 		sysModelVerSelect = 42
 
-	try:
-		os.chdir(cwd)
-	except Exception:
-		prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
-		exitOnEnter()
+	fs.reload()
 
 	if sysModelVerSelect == 1:
 		sanity()
