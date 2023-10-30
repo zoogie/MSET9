@@ -12,8 +12,12 @@ def prbad(content):
 def prinfo(content):
 	print(f"[*] {content}")
 
+def cleanup():
+	pass
+
 def exitOnEnter(errCode = 0):
 	input("[*] Press Enter to exit...")
+	cleanup()
 	exit(errCode)
 
 # wrapper for fs operations. can use pyfilesystem2 directly,
@@ -53,46 +57,133 @@ class FSWrapper(metaclass=abc.ABCMeta):
 	def freespace(self):
 		pass
 	@abc.abstractmethod
+	def close(self):
+		pass
+	@abc.abstractmethod
 	def reload(self):
 		pass
 
 osver = platform.system()
 
 if osver == "Darwin":
-	# ======== macOS / iOS ========
-	prbad("Error 11: macOS is not supported!")
-	prinfo("Please use a Windows or Linux computer.")
-	exitOnEnter()
+	# ======== macOS / iOS? ========
+	import sys
+
+	if len(sys.argv) < 2:
+		prbad("Error 11: macOS is not supported!")
+		prinfo("Please use a Windows or Linux computer.")
+		exitOnEnter()
+
+	device = sys.argv[1]
+	if not os.path.exists(device):
+		prbad("Error 13: Device doesn't exist.")
+		prinfo("Make sure your sd card is sitted properly.")
+		exitOnEnter()
+
 	from pyfatfs.PyFatFS import PyFatFS
 	from pyfatfs.EightDotThree import EightDotThree
+	from pyfatfs._exceptions import PyFATException
+	import struct
+
+	def make_8dot3_name(dir_name, parent_dir_entry):
+		dirs, files, _ = parent_dir_entry.get_entries()
+		dir_entries = [e.get_short_name() for e in dirs + files]
+		extsep = "."
+		def map_chars(name: bytes) -> bytes:
+			_name: bytes = b''
+			for b in struct.unpack(f"{len(name)}c", name):
+				if b == b' ':
+					_name += b''
+				elif ord(b) in EightDotThree.INVALID_CHARACTERS:
+					_name += b'_'
+				else:
+					_name += b
+			return _name
+		dir_name = dir_name.upper()
+		# Shorten to 8 chars; strip invalid characters
+		basename = os.path.splitext(dir_name)[0][0:8].strip()
+		if basename.isascii():
+			basename = basename.encode("ascii", errors="replace")
+			basename = map_chars(basename).decode("ascii")
+		else:
+			basename = "HAX8D3FN"
+		# Shorten to 3 chars; strip invalid characters
+		extname = os.path.splitext(dir_name)[1][1:4].strip()
+		if basename.isascii():
+			extname = extname.encode("ascii", errors="replace")
+			extname = map_chars(extname).decode("ascii")
+		else:
+			extname = "HAX"
+		if len(extname) == 0:
+			extsep = ""
+		# Loop until suiting name is found
+		i = 0
+		while len(str(i)) + 1 <= 7:
+			if i > 0:
+				maxlen = 8 - (1 + len(str(i)))
+				basename = f"{basename[0:maxlen]}~{i}"
+			short_name = f"{basename}{extsep}{extname}"
+			if short_name not in dir_entries:
+				return short_name
+			i += 1
+		raise PyFATException("Cannot generate 8dot3 filename, "
+							 "unable to find suiting short file name.",
+							 errno=errno.EEXIST)
+	EightDotThree.make_8dot3_name = staticmethod(make_8dot3_name)
 
 	class FatFS(FSWrapper):
 		def __init__(self, device):
-			pass
+			self.device = device
+			self.reload()
 		def exists(self, path):
-			pass
+			return self.fs.exists(path)
 		def mkdir(self, path):
-			pass
+			self.fs.makedir(path)
 		def open(self, path, mode='r'):
-			pass
+			return self.fs.open(path, mode)
 		def getsize(self, path):
-			pass
+			return self.fs.getsize(path)
 		def remove(self, path):
-			pass
+			self.fs.remove(path)
 		def rename(self, src, dst):
-			pass
+			self.fs.movedir(src, dst, create=True)  # TODO: implement real fat rename...
 		def rmtree(self, path):
-			pass
+			self.fs.removetree(path)
 		def copytree(self, src, dst):
-			pass
-		def walk(self, path, topdown=False):
-			pass
+			self.fs.copydir(src, dst, create=True)
+		def walk(self, path, topdown=False):  # topdown is ignored
+			for dir_path, dirs, files in self.fs.walk(path):
+				yield dir_path, list(map(lambda x: x.name, dirs)), list(map(lambda x: x.name, files))
 		def is_writable(self):
-			pass
+			try:
+				with self.open("test.txt", "w") as f:
+					f.write("test")
+					f.close()
+				self.remove("test.txt")
+				return True
+			except:
+				return False
 		def freespace(self):
-			pass
+			return 16777216  # TODO: implement proper freespace
+		def close(self):
+			try:
+				self.fs.close()
+			except AttributeError:
+				pass
 		def reload(self):
-			pass
+			self.close()
+			self.fs = PyFatFS(filename=self.device)
+
+	try:
+		fs = FatFS(device)
+	except PyFATException:
+		prbad("Error 14: Can't open device.")
+		prinfo("Make sure your sd card is unmounted in disk utility.")
+		exitOnEnter()
+
+	def cleanup():
+		global fs
+		fs.close()
 
 else:
 	# ======== Windows / Linux ========
@@ -134,6 +225,8 @@ else:
 			return writable
 		def freespace(self):
 			return shutil.disk_usage(self.root).free
+		def close(self):
+			pass
 		def reload(self):
 			try:
 				os.chdir(self.root)
@@ -294,9 +387,9 @@ def sanity():
 			if not fs.exists(realId1Path + "/dbs"):
 				fs.mkdir(realId1Path + "/dbs")
 			if checkTitledb:
-				open(realId1Path + "/dbs/title.db", "x").close()
+				fs.open(realId1Path + "/dbs/title.db", "x").close()
 			if checkImportdb:
-				open(realId1Path + "/dbs/import.db", "x").close()
+				fs.open(realId1Path + "/dbs/import.db", "x").close()
 
 			prinfo("Created empty databases.")
 		prinfo("Please initialize the title database by navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then rerun this script.")
@@ -358,13 +451,13 @@ def injection():
 
 	if not fs.exists(hackedId1Path + "/dbs"):
 		prinfo("Copying databases to hacked ID1...")
-		shutil.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
+		fs.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
 
 	prinfo("Copying extdata to hacked ID1...")
 	if not fs.exists(hackedId1Path + f"/extdata/00000000/{homeHex:08X}"):
-		shutil.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
+		fs.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
 	if not fs.exists(hackedId1Path + f"/extdata/00000000/{miiHex:08X}"):
-		shutil.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{miiHex:08X}")
+		fs.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{miiHex:08X}")
 
 	prinfo("Injecting trigger file...")
 	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
@@ -400,31 +493,38 @@ def remove():
 		maybeHackedId = bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")
 		if fs.exists(id0 + "/" + maybeHackedId):
 			prinfo("Deleting hacked ID1...")
-			shutil.rmtree(id0 + "/" + maybeHackedId)
+			fs.rmtree(id0 + "/" + maybeHackedId)
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
 	prgood("Successfully removed MSET9!")
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	global fs
-	shortname = keyfile.rsplit("/")[-1]
+	split = keyfile.rsplit("/", 1)
+	if len(split) == 1:
+		dirname = "/"
+		filename = split[0]
+	else:
+		dirname, filename = split
 	if not fs.exists(keyfile):
-		prbad(f"{shortname} does not exist on SD card!")
-		return retval
-	elif expectedSize:
+		keyfile = os.path.join(dirname, filename.upper())  # this is literally for b9
+		if not fs.exists(keyfile):
+			prbad(f"{filename} does not exist on SD card!")
+			return retval
+	if expectedSize:
 		fileSize = fs.getsize(keyfile)
 		if expectedSize != fileSize:
-			prbad(f"{shortname} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
+			prbad(f"{filename} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
 			return retval
 	elif crc32:
-		with open(keyfile, "rb") as f:
+		with fs.open(keyfile, "rb") as f:
 			checksum = binascii.crc32(f.read())
 			if crc32 != checksum:
-				prbad(f"{shortname} was not recognized as the correct file")
+				prbad(f"{filename} was not recognized as the correct file")
 				f.close()
 				return retval
 			f.close()
-	prgood(f"{shortname} looks good!")
+	prgood(f"{filename} looks good!")
 	return 0
 
 # Section: sdwalk
@@ -517,4 +617,5 @@ while 1:
 	else:
 		prinfo("Invalid input, try again. Valid inputs: 1, 2, 3, 4")
 
+cleanup()
 time.sleep(2)
