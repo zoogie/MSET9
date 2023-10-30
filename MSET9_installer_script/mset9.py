@@ -12,12 +12,12 @@ def prbad(content):
 def prinfo(content):
 	print(f"[*] {content}")
 
-def cleanup():
+def cleanup(remount=False):
 	pass
 
-def exitOnEnter(errCode = 0):
+def exitOnEnter(errCode = 0, remount=False):
+	cleanup(remount)
 	input("[*] Press Enter to exit...")
-	cleanup()
 	exit(errCode)
 
 # wrapper for fs operations. can use pyfilesystem2 directly,
@@ -63,6 +63,9 @@ class FSWrapper(metaclass=abc.ABCMeta):
 	def reload(self):
 		pass
 
+def remove_extra():
+	pass
+
 osver = platform.system()
 thisfile = os.path.abspath(__file__)
 
@@ -70,15 +73,87 @@ if osver == "Darwin":
 	# ======== macOS / iOS? ========
 	import sys
 
+	tmpprefix = "mset9-macos-run-"
+
+	def tmp_cleanup():
+		global tmpprefix
+		prinfo("Removing temporary folders...")
+		import tempfile, shutil
+		systmp = tempfile.gettempdir()
+		for dirname in os.listdir(systmp):
+			if dirname.startswith(tmpprefix):
+				shutil.rmtree(f"{systmp}/{dirname}")
+		prinfo("Temporary folders removed!")
+
+	def run_diskutil_and_wait(command, dev):
+		import subprocess
+		return subprocess.run(["diskutil", command, dev], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+
 	if len(sys.argv) < 2:
-		prbad("Error 11: macOS is not supported!")
-		prinfo("Please use a Windows or Linux computer.")
-		exitOnEnter()
+		if not thisfile.startswith("/Volumes/"):
+			#prbad("Error :")
+			prbad("You should run this file from sd card, or specifiy device name manually")
+			exitOnEnter()
+		prinfo("Resolving device...")
+		device = None
+		devid = os.stat(thisfile).st_dev
+		for devname in os.listdir("/dev"):
+			if not devname.startswith("disk"):
+				continue
+			devpath = f"/dev/{devname}"
+			if os.stat(devpath).st_rdev == devid:
+				device = devpath
+				break
+		if device is None:
+			#prbad("Error :")
+			prbad("Can't find matching device, this shouldn't happen...")
+			exitOnEnter()
+
+		prinfo("Finding previous temporary folder...")
+		import shutil, tempfile, time
+		systmp = tempfile.gettempdir()
+		tmpdir = None
+		for dirname in os.listdir(systmp):
+			if dirname.startswith(tmpprefix):
+				dirpath = f"{systmp}/{dirname}"
+				script = f"{dirpath}/mset9.py"
+				if not os.path.exists(script):
+					continue
+				elif os.stat(script).st_mtime > os.stat(thisfile).st_mtime:
+					tmpdir = dirpath
+					break
+				else:
+					shutil.rmtree(dirpath)
+		if tmpdir is None:
+			prinfo("Creating temporary folder...")
+			tmpdir = tempfile.mkdtemp(prefix=tmpprefix)
+			shutil.copyfile(thisfile, f"{tmpdir}/mset9.py")
+
+		prinfo("Trying to unmount sd card...")
+		ret = 1
+		count = 0
+		while count < 5:
+			ret = run_diskutil_and_wait("umount", device)
+			if ret == 0:
+				break
+			else:
+				count += 1
+				time.sleep(1)
+
+		if ret == 1:
+			#prbad("Error : ")
+			prbad("Can't umount sd card!")
+			#tmp_cleanup()
+			exitOnEnter()
+
+		os.execlp(sys.executable, sys.executable, f"{tmpdir}/mset9.py", device)
+		prbad("WTF???")
 
 	device = sys.argv[1]
 	if not os.path.exists(device):
 		prbad("Error 13: Device doesn't exist.")
 		prinfo("Make sure your sd card is sitted properly.")
+		#tmp_cleanup()
 		exitOnEnter()
 
 	# self elevate
@@ -100,8 +175,9 @@ if osver == "Darwin":
 		try:
 			os.execlp("sudo", "sudo", sys.executable, thisfile, device)
 		except:
-			printfo("Root privilege is required")
-			exitOnEnter()
+			prbad("Root privilege is required")
+			#tmp_cleanup()
+			exitOnEnter(remount=True)
 
 	from pyfatfs.PyFatFS import PyFatFS
 	from pyfatfs.EightDotThree import EightDotThree
@@ -202,11 +278,20 @@ if osver == "Darwin":
 	except PyFATException:
 		prbad("Error 14: Can't open device.")
 		prinfo("Make sure your sd card is unmounted in disk utility.")
+		#tmp_cleanup()
 		exitOnEnter()
 
-	def cleanup():
-		global fs
+	def remove_extra():
+		tmp_cleanup()
+
+	def cleanup(remount=False):
+		global fs, device
 		fs.close()
+		if remount:
+			prinfo("Trying to remount sd card...")
+			run_diskutil_and_wait("mount", device)
+		#tmp_cleanup()
+
 
 else:
 	# ======== Windows / Linux ========
@@ -520,6 +605,7 @@ def remove():
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
 	prgood("Successfully removed MSET9!")
+	remove_extra()
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	global fs
@@ -633,12 +719,12 @@ while 1:
 		exitOnEnter()
 	elif sysModelVerSelect == 3:
 		remove()
-		exitOnEnter()
+		exitOnEnter(remount=True)
 	elif sysModelVerSelect == 4 or "exit":
-		prgood("Goodbye!")
 		break
 	else:
 		prinfo("Invalid input, try again. Valid inputs: 1, 2, 3, 4")
 
-cleanup()
+cleanup(remount=True)
+prgood("Goodbye!")
 time.sleep(2)
