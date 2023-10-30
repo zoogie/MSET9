@@ -64,6 +64,7 @@ class FSWrapper(metaclass=abc.ABCMeta):
 		pass
 
 osver = platform.system()
+thisfile = os.path.abspath(__file__)
 
 if osver == "Darwin":
 	# ======== macOS / iOS? ========
@@ -79,6 +80,28 @@ if osver == "Darwin":
 		prbad("Error 13: Device doesn't exist.")
 		prinfo("Make sure your sd card is sitted properly.")
 		exitOnEnter()
+
+	# self elevate
+	if os.getuid() != 0:
+		# run with osascript won't have raw disk access by default...
+		# thanks for the perfect security of macos
+		#args = [sys.executable, thisfile, device]
+		#escaped_args = map(lambda x: f"\\\"{x}\\\"", args)
+		#cmd = " ".join(escaped_args)
+		#osascript = " ".join([
+		#	f"do shell script \"{cmd}\"",
+		#	"with administrator privileges",
+		#	"without altering line endings"
+		#])
+		#try:
+		#	os.execlp("osascript", "osascript", "-e", osascript)
+		prinfo("Input the password of your computer if prompted.")
+		prinfo("(It won't show anything while you're typing, just type it blindly)")
+		try:
+			os.execlp("sudo", "sudo", sys.executable, thisfile, device)
+		except:
+			printfo("Root privilege is required")
+			exitOnEnter()
 
 	from pyfatfs.PyFatFS import PyFatFS
 	from pyfatfs.EightDotThree import EightDotThree
@@ -234,7 +257,7 @@ else:
 				prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
 				exitOnEnter()
 
-	fs = OSFS(os.path.dirname(os.path.abspath(__file__)))
+	fs = OSFS(os.path.dirname(thisfile))
 
 def clearScreen():
 	if osver == "Windows":
