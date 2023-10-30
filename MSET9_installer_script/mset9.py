@@ -156,6 +156,41 @@ if osver == "Darwin":
 		#tmp_cleanup()
 		exitOnEnter()
 
+	# auto venv
+	venv_path = os.path.dirname(thisfile)
+	venv_bin = f"{venv_path}/bin"
+	venv_py = f"{venv_bin}/python3"
+
+	def activate_venv():
+		global venv_path, venv_bin, venv_py, device
+		#import site
+		os.environ["PATH"] = os.pathsep.join([venv_bin, *os.environ.get("PATH", "").split(os.pathsep)])
+		os.environ["VIRTUAL_ENV"] = venv_path
+		os.environ["VIRTUAL_ENV_PROMPT"] = "(mset9)"
+
+		os.execlp(venv_py, venv_py, __file__, device)
+
+		#prev_length = len(sys.path)
+		#for lib in "__LIB_FOLDERS__".split(os.pathsep):
+		#	path = os.path.realpath(os.path.join(venv_bin, lib))
+		#	site.addsitedir(path)
+		#	sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]
+		#sys.real_prefix = sys.prefix
+		#sys.prefix = venv_path
+
+	if "VIRTUAL_ENV" not in os.environ and os.path.exists(venv_py):
+		prinfo("venv found, activate it...")
+		activate_venv()
+
+	try:
+		from pyfatfs.PyFatFS import PyFatFS
+	except ModuleNotFoundError:
+		prinfo("PyFatFS not found, setting up venv for installing automatically...")
+		import venv, subprocess
+		venv.create(venv_path, with_pip=True)
+		subprocess.run(["bin/pip", "install", "pyfatfs"], cwd=venv_path)
+		activate_venv()
+
 	# self elevate
 	if os.getuid() != 0:
 		# run with osascript won't have raw disk access by default...
