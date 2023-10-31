@@ -91,8 +91,8 @@ if osver == "Darwin":
 
 	if len(sys.argv) < 2:
 		if not thisfile.startswith("/Volumes/"):
-			#prbad("Error :")
-			prbad("You should run this file from sd card, or specifiy device name manually")
+			prbad("Error 01: Not running on the SD Card root. /Nintendo 3DS/ not found.")
+			# should we add some macos specific message?
 			exitOnEnter()
 		prinfo("Resolving device...")
 		device = None
@@ -141,8 +141,8 @@ if osver == "Darwin":
 				time.sleep(1)
 
 		if ret == 1:
-			#prbad("Error : ")
-			prbad("Can't umount sd card!")
+			prbad("Error 16: Unable to umount sd card.")
+			prinfo("Please make sure there's no other app using your sd card.")
 			#tmp_cleanup()
 			exitOnEnter()
 
@@ -210,7 +210,7 @@ if osver == "Darwin":
 		try:
 			os.execlp("sudo", "sudo", sys.executable, thisfile, device)
 		except:
-			prbad("Root privilege is required")
+			prbad("Error 17: Root privilege is required.")
 			#tmp_cleanup()
 			exitOnEnter(remount=True)
 
@@ -331,9 +331,15 @@ if osver == "Darwin":
 
 	try:
 		fs = FatFS(device)
-	except PyFATException:
-		prbad("Error 14: Can't open device.")
-		prinfo("Make sure your sd card is unmounted in disk utility.")
+	except PyFATException as e:
+		msg = str(e)
+		if "Cannot open" in msg:
+			prbad("Error 14: Can't open device.")
+			prinfo("Please make sure your sd card is unmounted in disk utility.")
+		elif "Invalid" in msg:
+			prbad("Error 15: Not FAT32 formatted or corrupted filesystem.")
+			prinfo("Please make sure your sd card is properly formatted")
+			prinfo("Consult: https://wiki.hacks.guide/wiki/Formatting_an_SD_card")
 		#tmp_cleanup()
 		exitOnEnter()
 

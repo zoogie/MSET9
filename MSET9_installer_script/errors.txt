@@ -12,5 +12,8 @@ Error 11: Running as MacOS. MacOS is not supported.
 Error 12: Multiple ID1s, follow MSET9 Troublshooting page.
 Error 13: Device doesn't exist.
 Error 14: Can't open device.
+Error 15: Not FAT32 formatted or corrupted filesystem.
+Error 16: Unable to umount sd card.
+Error 17: Root privilege is required.
 
 MSET9 Troublshooting Page: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9
