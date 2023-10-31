@@ -254,7 +254,7 @@ if osver == "Darwin":
 		if basename.isascii():
 			extname = extname.encode("ascii", errors="replace")
 			extname = map_chars(extname).decode("ascii")
-		else:
+		elif len(extname) != 0:
 			extname = "HAX"
 		if len(extname) == 0:
 			extsep = ""
