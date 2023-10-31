@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import abc, os, platform, time, binascii
 
-VERSION = "v1.1"
+VERSION = "v1.2"
 
 def prgood(content):
 	print(f"[\033[0;32m✓\033[0m] {content}")
@@ -438,7 +438,7 @@ if not fs.ensurespace(16777216):
 	exitOnEnter()
 
 clearScreen()
-print(f"MSET9 {VERSION} SETUP by zoogie and Aven")
+print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
 print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
@@ -750,7 +750,7 @@ if id1Count != 1:
 	exitOnEnter()
 
 clearScreen()
-print(f"MSET9 {VERSION} SETUP by zoogie and Aven")
+print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
 print(f"Using {consoleModel} {consoleFirmware}")
 
 print("\n-- Please type in a number then hit return --\n")
