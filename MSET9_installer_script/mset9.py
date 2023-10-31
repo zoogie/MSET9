@@ -93,7 +93,7 @@ if osver == "Darwin":
 
 	if len(sys.argv) < 2:
 		if not thisfile.startswith("/Volumes/"):
-			prbad("Error 02: Your SD card is write protected! If using a full size SD card, ensure that the lock switch is facing upwards.")
+			prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
 			# should we add some macos specific message?
 			exitOnEnter()
 		prinfo("Resolving device...")
