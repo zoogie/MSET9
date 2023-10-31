@@ -68,6 +68,7 @@ def remove_extra():
 
 osver = platform.system()
 thisfile = os.path.abspath(__file__)
+systmp = None
 
 if osver == "Darwin":
 	# ======== macOS / iOS? ========
@@ -76,10 +77,11 @@ if osver == "Darwin":
 	tmpprefix = "mset9-macos-run-"
 
 	def tmp_cleanup():
-		global tmpprefix
+		global tmpprefix, systmp
 		prinfo("Removing temporary folders...")
 		import tempfile, shutil
-		systmp = tempfile.gettempdir()
+		if systmp is None:
+			systmp = tempfile.gettempdir()
 		for dirname in os.listdir(systmp):
 			if dirname.startswith(tmpprefix):
 				shutil.rmtree(f"{systmp}/{dirname}")
@@ -150,6 +152,8 @@ if osver == "Darwin":
 		prbad("WTF???")
 
 	device = sys.argv[1]
+	if len(sys.argv) == 3:
+		systmp = sys.argv[2]
 	if not os.path.exists(device):
 		prbad("Error 13: Device doesn't exist.")
 		prinfo("Make sure your sd card is sitted properly.")
@@ -162,13 +166,16 @@ if osver == "Darwin":
 	venv_py = f"{venv_bin}/python3"
 
 	def activate_venv():
-		global venv_path, venv_bin, venv_py, device
+		global venv_path, venv_bin, venv_py, device, systmp
 		#import site
 		os.environ["PATH"] = os.pathsep.join([venv_bin, *os.environ.get("PATH", "").split(os.pathsep)])
 		os.environ["VIRTUAL_ENV"] = venv_path
 		os.environ["VIRTUAL_ENV_PROMPT"] = "(mset9)"
 
-		os.execlp(venv_py, venv_py, __file__, device)
+		if systmp is None:
+			os.execlp(venv_py, venv_py, __file__, device)
+		else:
+			os.execlp(venv_py, venv_py, __file__, device, systmp)
 
 		#prev_length = len(sys.path)
 		#for lib in "__LIB_FOLDERS__".split(os.pathsep):
@@ -208,7 +215,8 @@ if osver == "Darwin":
 		prinfo("Input the password of your computer if prompted.")
 		prinfo("(It won't show anything while you're typing, just type it blindly)")
 		try:
-			os.execlp("sudo", "sudo", sys.executable, thisfile, device)
+			import tempfile
+			os.execlp("sudo", "sudo", sys.executable, thisfile, device, tempfile.gettempdir())
 		except:
 			prbad("Error 17: Root privilege is required.")
 			#tmp_cleanup()
@@ -667,7 +675,6 @@ def remove():
 	id1 = id1[:32]
 	realId1Path = id0 + "/" + id1
 	prgood("Successfully removed MSET9!")
-	remove_extra()
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	global fs
@@ -781,6 +788,7 @@ while 1:
 		exitOnEnter()
 	elif sysModelVerSelect == 3:
 		remove()
+		remove_extra()
 		exitOnEnter(remount=True)
 	elif sysModelVerSelect == 4 or "exit":
 		break
