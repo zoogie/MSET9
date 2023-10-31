@@ -119,9 +119,7 @@ if osver == "Darwin":
 			if dirname.startswith(tmpprefix):
 				dirpath = f"{systmp}/{dirname}"
 				script = f"{dirpath}/mset9.py"
-				if not os.path.exists(script):
-					continue
-				elif os.stat(script).st_mtime > os.stat(thisfile).st_mtime:
+				if os.path.exists(script) and os.stat(script).st_mtime > os.stat(thisfile).st_mtime:
 					tmpdir = dirpath
 					break
 				else:
