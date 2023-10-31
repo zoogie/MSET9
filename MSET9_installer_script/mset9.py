@@ -54,7 +54,7 @@ class FSWrapper(metaclass=abc.ABCMeta):
 	def is_writable(self):
 		pass
 	@abc.abstractmethod
-	def freespace(self):
+	def ensurespace(self, size):
 		pass
 	@abc.abstractmethod
 	def close(self):
@@ -215,6 +215,7 @@ if osver == "Darwin":
 			exitOnEnter(remount=True)
 
 	from pyfatfs.PyFatFS import PyFatFS
+	from pyfatfs.FATDirectoryEntry import FATDirectoryEntry, make_lfn_entry
 	from pyfatfs.EightDotThree import EightDotThree
 	from pyfatfs._exceptions import PyFATException
 	import struct
@@ -280,7 +281,22 @@ if osver == "Darwin":
 		def remove(self, path):
 			self.fs.remove(path)
 		def rename(self, src, dst):
-			self.fs.movedir(src, dst, create=True)  # TODO: implement real fat rename...
+			srcdir = os.path.dirname(src)
+			srcname  = os.path.basename(src)
+			dstdir = os.path.dirname(dst)
+			dstname  = os.path.basename(dst)
+			if srcdir == dstdir and all(not EightDotThree.is_8dot3_conform(n) for n in [srcname, dstname]):
+				# cursed rename, lfn and same folder only
+				pdentry = self.fs._get_dir_entry(srcdir)
+				dentry = pdentry._search_entry(srcname)
+				lfn_entry = make_lfn_entry(dstname, dentry.name)
+				dentry.set_lfn_entry(lfn_entry)
+				self.fs.fs.update_directory_entry(pdentry)
+				self.fs.fs.flush_fat()
+			elif self.fs.getinfo(src).is_dir:
+				self.fs.movedir(src, dst, create=True)
+			else:
+				self.fs.move(src, dst, create=True)
 		def rmtree(self, path):
 			self.fs.removetree(path)
 		def copytree(self, src, dst):
@@ -297,8 +313,13 @@ if osver == "Darwin":
 				return True
 			except:
 				return False
-		def freespace(self):
-			return 16777216  # TODO: implement proper freespace
+		def ensurespace(self, size):
+			try:
+				first = self.fs.fs.allocate_bytes(size)[0]
+				self.fs.fs.free_cluster_chain(first)
+				return True
+			except PyFATException:
+				return False
 		def close(self):
 			try:
 				self.fs.close()
@@ -366,8 +387,8 @@ else:
 			except:
 				writable = False
 			return writable
-		def freespace(self):
-			return shutil.disk_usage(self.root).free
+		def ensurespace(self, size):
+			return shutil.disk_usage(self.root).free >= size
 		def close(self):
 			pass
 		def reload(self):
@@ -405,7 +426,7 @@ def writeProtectCheck():
 
 # Section: SD card free space
 # ensure 16MB free space
-if fs.freespace() < 16777216:
+if not fs.ensurespace(16777216):
 	prbad(f"Error 06: You need at least 16MB free space on your SD card, you have {(freeSpace / 1000000):.2f} bytes!")
 	prinfo("Please free up some space and try again.")
 	exitOnEnter()
