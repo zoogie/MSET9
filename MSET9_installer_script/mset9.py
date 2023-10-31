@@ -466,7 +466,7 @@ while 1:
 	except KeyboardInterrupt:
 		print()
 		prgood("Goodbye!")
-		exitOnEnter()
+		exitOnEnter(remount=True)
 	except:
 		sysModelVerSelect = 42
 	if sysModelVerSelect == 1:
