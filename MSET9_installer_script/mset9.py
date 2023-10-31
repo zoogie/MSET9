@@ -93,7 +93,7 @@ if osver == "Darwin":
 
 	if len(sys.argv) < 2:
 		if not thisfile.startswith("/Volumes/"):
-			prbad("Error 01: Not running on the SD Card root. /Nintendo 3DS/ not found.")
+			prbad("Error 02: Your SD card is write protected! If using a full size SD card, ensure that the lock switch is facing upwards.")
 			# should we add some macos specific message?
 			exitOnEnter()
 		prinfo("Resolving device...")
@@ -131,7 +131,7 @@ if osver == "Darwin":
 			tmpdir = tempfile.mkdtemp(prefix=tmpprefix)
 			shutil.copyfile(thisfile, f"{tmpdir}/mset9.py")
 
-		prinfo("Trying to unmount sd card...")
+		prinfo("Trying to unmount SD card...")
 		ret = 1
 		count = 0
 		while count < 10:
@@ -143,8 +143,8 @@ if osver == "Darwin":
 				time.sleep(1)
 
 		if ret == 1:
-			prbad("Error 16: Unable to umount sd card.")
-			prinfo("Please make sure there's no other app using your sd card.")
+			prbad("Error 16: Unable to umount SD card.")
+			prinfo("Please ensure there's no other app using your SD card.")
 			#tmp_cleanup()
 			exitOnEnter()
 
@@ -156,7 +156,8 @@ if osver == "Darwin":
 		systmp = sys.argv[2]
 	if not os.path.exists(device):
 		prbad("Error 13: Device doesn't exist.")
-		prinfo("Make sure your sd card is sitted properly.")
+		prinfo("Ensure your SD card is inserted properly.")
+		prinfo("Also, don't eject SD card itself in disk utility, unmount the partition only.")
 		#tmp_cleanup()
 		exitOnEnter()
 
@@ -343,10 +344,10 @@ if osver == "Darwin":
 		msg = str(e)
 		if "Cannot open" in msg:
 			prbad("Error 14: Can't open device.")
-			prinfo("Please make sure your sd card is unmounted in disk utility.")
+			prinfo("Please ensure your SD card is unmounted in disk utility.")
 		elif "Invalid" in msg:
 			prbad("Error 15: Not FAT32 formatted or corrupted filesystem.")
-			prinfo("Please make sure your sd card is properly formatted")
+			prinfo("Please ensure your SD card is properly formatted")
 			prinfo("Consult: https://wiki.hacks.guide/wiki/Formatting_an_SD_card")
 		#tmp_cleanup()
 		exitOnEnter()
@@ -358,7 +359,7 @@ if osver == "Darwin":
 		global fs, device
 		fs.close()
 		if remount:
-			prinfo("Trying to remount sd card...")
+			prinfo("Trying to remount SD card...")
 			run_diskutil_and_wait("mount", device)
 		#tmp_cleanup()
 
