@@ -134,7 +134,7 @@ if osver == "Darwin":
 		prinfo("Trying to unmount sd card...")
 		ret = 1
 		count = 0
-		while count < 5:
+		while count < 10:
 			ret = run_diskutil_and_wait("umount", device)
 			if ret == 0:
 				break
