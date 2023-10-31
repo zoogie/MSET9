@@ -288,10 +288,8 @@ if osver == "Darwin":
 		def remove(self, path):
 			self.fs.remove(path)
 		def rename(self, src, dst):
-			srcdir = os.path.dirname(src)
-			srcname  = os.path.basename(src)
-			dstdir = os.path.dirname(dst)
-			dstname  = os.path.basename(dst)
+			srcdir, srcname = f"/{src}".rstrip("/").rsplit("/", 1)
+			dstdir, dstname = f"/{dst}".rstrip("/").rsplit("/", 1)
 			if srcdir == dstdir and all(not EightDotThree.is_8dot3_conform(n) for n in [srcname, dstname]):
 				# cursed rename, lfn and same folder only
 				pdentry = self.fs._get_dir_entry(srcdir)
