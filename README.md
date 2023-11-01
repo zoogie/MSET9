@@ -5,6 +5,7 @@
 - Aspargas2 (the Black Cat) for asm help in ID1gen as well!
 - TuxSH for [usr2arm9ldr](https://github.com/TuxSH/usr2arm9ldr) and some good advice!
 - ToxicAven for substantial mset9.py improvements!
+- Danny8376 for adding macOS support!
 
 [MSET9 in action](https://zoogie.github.io/web/m9/(%20%CD%A1%C2%B0%20%CD%9C%CA%96%20%CD%A1%C2%B0).webm)
 
@@ -22,7 +23,7 @@ Source: [3Dbrew](https://www.3dbrew.org/wiki/3DS_System_Flaws#Process9)
 ## Can I do it?
 -- You need a 3ds 11.4-11.17, any region (probably, haven't tested them all)<br>
 -- A USB to SD reader<br>
--- Windows/Linux PC (this might be expanded to MAC and/or Android at some point, if possible)<br>
+-- Windows/MAC/Linux PC (this might be expanded to chromeOS and/or Android at some point, if possible)<br>
 
 ## Directions
 In release archive or, preferably, [3DS Hacks Guide- MSET9](https://3ds.hacks.guide/installing-boot9strap-(mset9).html).<br>
@@ -48,8 +49,8 @@ https://3ds.hacks.guide/troubleshooting.html#installing-boot9strap-mset9
   Fun fact: The 8 digit hex file, if left in extdata, will also crash FBI when selecting the "Ext Save Data" option in its main menu. It's the only homebrew I know that calls FS_EnumerateExtData.
 - Q: You shortened SafeB9SInstaller.bin to SafeB9S.bin, why?<br>
   A: Keeps FAT's 8.3 filename standard which avoids Long File Names, and thus enables significant space savings in the FatFs library. "B9" is also used for the same reason albeit not FatFs related. Small code footprint is of paramount importance everywhere in this exploit.
-- Q: Why doesn't this work on MAC?<br>
-  A: Because it refuses to render the following unicode craziness:<br> ￿﫿餑䠇䚅敩ꄈ∁䬅䞘䙨䙙꫿ᰗ䙃䰃䞠䞸退ࠊꁱࠅ캙ࠄsdmc退ࠊb9<br>
+- Q: Why is supporting some non-3ds OS's difficult?<br>
+  A: Because they don't like the funky unicode craziness:<br> ￿﫿餑䠇䚅敩ꄈ∁䬅䞘䙨䙙꫿ᰗ䙃䰃䞠䞸退ࠊꁱࠅ캙ࠄsdmc退ࠊb9<br>
   ( ͡° ͜ʖ ͡°)
 
 ## Additional Thanks
