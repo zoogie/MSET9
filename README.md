@@ -13,9 +13,9 @@
 This is an ARM9 primary exploit for 3DS that can be launched with only filename data added to the inserted SD card. 
 
 ## How does it work
-In the implementation for FSPXI:EnumerateExtSaveData (called by MSET to parse 3DS extdata IDs for Data Management), the return value of the P9 internal function call to open a directory (when enumerating contents of the extdata directory) was not checked. Therefore, if the call fails, an uninitialised pointer on stack will be used for a vtable call.<br>
+In the implementation for FSPXI:EnumerateExtSaveData (called by MSET to parse 3DS extdata IDs for Data Management), the return value of the process9 internal function call to open a directory (when enumerating contents of the extdata directory) was not checked. Therefore, if the call fails, an uninitialised pointer on stack will be used for a vtable call.<br>
 
-As such, a file that starts with 8 hex digits can crash process9 if placed directly inside the extdata directory. It can crash in various ways based on subtle differences in the way the user triggers the crash event.<br>
+As such, a <em>file</em> (instead of an expected folder) that starts with 8 hex digits can crash process9 if placed directly inside the extdata directory. It can crash in various ways based on subtle differences in the way the user triggers the crash event.<br>
 
 While mostly leading to null derefs, in one specific context, process9 jumps directly to an ID1 string being held in ARM9 memory. Surprisingly, the 3DS doesn't discern what characters are used for the ID1 directory name on the SD, only requiring exactly 32 chars. This allows the attacker to insert arm instructions into the unicode ID1 dirname and take control of the ARM9, and thus, full control of the 3DS.<br>
 Source: [3Dbrew](https://www.3dbrew.org/wiki/3DS_System_Flaws#Process9)
