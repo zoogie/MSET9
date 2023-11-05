@@ -62,6 +62,9 @@ class FSWrapper(metaclass=abc.ABCMeta):
 	@abc.abstractmethod
 	def reload(self):
 		pass
+	@abc.abstractmethod
+	def print_root(self):
+		pass
 
 def remove_extra():
 	pass
@@ -89,7 +92,9 @@ if osver == "Darwin":
 
 	def run_diskutil_and_wait(command, dev):
 		import subprocess
-		return subprocess.run(["diskutil", command, dev], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+		if type(command) != list:
+			command = [command]
+		return subprocess.run(["diskutil", *command, dev], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
 
 	if len(sys.argv) < 2:
 		if not thisfile.startswith("/Volumes/"):
@@ -130,18 +135,10 @@ if osver == "Darwin":
 			shutil.copyfile(thisfile, f"{tmpdir}/mset9.py")
 
 		prinfo("Trying to unmount SD card...")
-		ret = 1
-		count = 0
-		while count < 10:
-			ret = run_diskutil_and_wait("umount", device)
-			if ret == 0:
-				break
-			else:
-				count += 1
-				time.sleep(1)
+		ret = run_diskutil_and_wait(["umount", "force"], device)
 
 		if ret == 1:
-			prbad("Error 16: Unable to umount SD card.")
+			prbad("Error 16: Unable to unmount SD card.")
 			prinfo("Please ensure there's no other app using your SD card.")
 			#tmp_cleanup()
 			exitOnEnter()
@@ -333,6 +330,8 @@ if osver == "Darwin":
 		def reload(self):
 			self.close()
 			self.fs = PyFatFS(filename=self.device)
+		def print_root(self):
+			pass
 
 	try:
 		fs = FatFS(device)
@@ -408,6 +407,9 @@ else:
 			except Exception:
 				prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
 				exitOnEnter()
+		def print_root(self):
+			prinfo(f"Current dir: {self.root}")
+
 
 	fs = OSFS(os.path.dirname(thisfile))
 
@@ -421,7 +423,7 @@ def clearScreen():
 if not fs.exists("Nintendo 3DS/"):
 	prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
 	prbad("If that doesn't work, eject the SD card, and put it back in your console. Turn it on and off again, then rerun this script.")
-	prinfo(f"Current dir: {cwd}")
+	fs.print_root()
 	exitOnEnter()
 
 # Section: sdWritable
