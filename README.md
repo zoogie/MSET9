@@ -49,9 +49,9 @@ https://3ds.hacks.guide/troubleshooting.html#installing-boot9strap-mset9
   Fun fact: The 8 digit hex file, if left in extdata, will also crash FBI when selecting the "Ext Save Data" option in its main menu. It's the only homebrew I know that calls FS_EnumerateExtData.
 - Q: You shortened SafeB9SInstaller.bin to SafeB9S.bin, why?<br>
   A: Keeps FAT's 8.3 filename standard which avoids Long File Names, and thus enables significant space savings in the FatFs library. "B9" is also used for the same reason albeit not FatFs related. Small code footprint is of paramount importance everywhere in this exploit.
-- Q: Why does this only work on 11.4+?
+- Q: Why does this only work on 11.4+?<br>
   A: It actually works 3.0+, but those old firms don't need to be supported due to the big guide using other exploits for that range.
-- Q: What happened on 3.0 that made mset9 work?
+- Q: What happened on 3.0 that made mset9 work?<br>
   A: On the 3.0 native firm refactor, Nintendo introduced a regression that allows the exploit to work (an unchecked function return).
 - Q: Why is supporting some non-3ds OS's difficult?<br>
   A: Because they don't like the funky unicode craziness:<br> ￿﫿餑䠇䚅敩ꄈ∁䬅䞘䙨䙙꫿ᰗ䙃䰃䞠䞸退ࠊꁱࠅ캙ࠄsdmc退ࠊb9<br>
