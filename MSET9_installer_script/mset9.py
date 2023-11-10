@@ -202,13 +202,16 @@ if osver == "Darwin":
 	def fix_ios_py_entitlement(path):
 		import subprocess
 
+		basepath = os.path.dirname(path)
+
 		if os.path.islink(path):
 			import shutil
-			realpy = os.path.join(os.path.dirname(path), os.readlink(path))
+			realpy = os.path.join(basepath, os.readlink(path))
 			os.remove(path)
 			shutil.copyfile(realpy, path)
+			shutil.copymode(realpy, path)
 
-		entaddxml = f"{venv_bin}/entadd.xml"
+		entaddxml = os.path.join(basepath, "entadd.xml")
 		with open(entaddxml, "w") as f:
 			f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
 			f.write('<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n')
@@ -220,7 +223,7 @@ if osver == "Darwin":
 			f.write('</plist>\n')
 
 		try:
-			args = ["ldid", "-M", f'-S{entaddxml}', path]
+			args = ["ldid", "-M", f"-S{entaddxml}", path]
 			result = subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
 			if result.returncode != 0:
 				prbad("Error #: Fail to modify venv python ios entitlement")
