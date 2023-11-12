@@ -225,14 +225,15 @@ if osver == "Darwin":
 	import struct, errno
 
 	def _search_entry(self, name):
+		name = name.upper()
 		dirs, files, _ = self.get_entries()
 		for entry in dirs+files:
 			try:
-				if entry.get_long_name().upper() == name.upper():
+				if entry.get_long_name().upper() == name:
 					return entry
 			except NotAnLFNEntryException:
 				pass
-			if entry.get_short_name() == name.upper():
+			if entry.get_short_name() == name:
 				return entry
 
 		raise PyFATException(f'Cannot find entry {name}',
