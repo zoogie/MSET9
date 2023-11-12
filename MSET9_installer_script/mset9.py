@@ -232,7 +232,7 @@ if osver == "Darwin":
 					return entry
 			except NotAnLFNEntryException:
 				pass
-			if entry.get_short_name() == name:
+			if entry.get_short_name() == name.upper():
 				return entry
 
 		raise PyFATException(f'Cannot find entry {name}',
@@ -692,17 +692,10 @@ def remove():
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	global fs
-	split = keyfile.rsplit("/", 1)
-	if len(split) == 1:
-		dirname = "/"
-		filename = split[0]
-	else:
-		dirname, filename = split
+	filename = keyfile.rsplit("/")[-1]
 	if not fs.exists(keyfile):
-		keyfile = os.path.join(dirname, filename.upper())  # this is literally for b9
-		if not fs.exists(keyfile):
-			prbad(f"{filename} does not exist on SD card!")
-			return retval
+		prbad(f"{filename} does not exist on SD card!")
+		return retval
 	if expectedSize:
 		fileSize = fs.getsize(keyfile)
 		if expectedSize != fileSize:
