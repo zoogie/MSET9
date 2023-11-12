@@ -221,8 +221,23 @@ if osver == "Darwin":
 	from pyfatfs.PyFatFS import PyFatFS
 	from pyfatfs.FATDirectoryEntry import FATDirectoryEntry, make_lfn_entry
 	from pyfatfs.EightDotThree import EightDotThree
-	from pyfatfs._exceptions import PyFATException
-	import struct
+	from pyfatfs._exceptions import PyFATException, NotAnLFNEntryException
+	import struct, errno
+
+	def _search_entry(self, name):
+		dirs, files, _ = self.get_entries()
+		for entry in dirs+files:
+			try:
+				if entry.get_long_name().upper() == name.upper():
+					return entry
+			except NotAnLFNEntryException:
+				pass
+			if entry.get_short_name() == name:
+				return entry
+
+		raise PyFATException(f'Cannot find entry {name}',
+							 errno=errno.ENOENT)
+	FATDirectoryEntry._search_entry = _search_entry
 
 	def make_8dot3_name(dir_name, parent_dir_entry):
 		dirs, files, _ = parent_dir_entry.get_entries()
