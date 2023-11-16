@@ -321,8 +321,24 @@ if osver == "Darwin":
 	from pyfatfs.PyFatFS import PyFatFS
 	from pyfatfs.FATDirectoryEntry import FATDirectoryEntry, make_lfn_entry
 	from pyfatfs.EightDotThree import EightDotThree
-	from pyfatfs._exceptions import PyFATException
-	import struct
+	from pyfatfs._exceptions import PyFATException, NotAnLFNEntryException
+	import struct, errno
+
+	def _search_entry(self, name):
+		name = name.upper()
+		dirs, files, _ = self.get_entries()
+		for entry in dirs+files:
+			try:
+				if entry.get_long_name().upper() == name:
+					return entry
+			except NotAnLFNEntryException:
+				pass
+			if entry.get_short_name() == name:
+				return entry
+
+		raise PyFATException(f'Cannot find entry {name}',
+							 errno=errno.ENOENT)
+	FATDirectoryEntry._search_entry = _search_entry
 
 	def make_8dot3_name(dir_name, parent_dir_entry):
 		dirs, files, _ = parent_dir_entry.get_entries()
@@ -781,17 +797,10 @@ def remove():
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	global fs
-	split = keyfile.rsplit("/", 1)
-	if len(split) == 1:
-		dirname = "/"
-		filename = split[0]
-	else:
-		dirname, filename = split
+	filename = keyfile.rsplit("/")[-1]
 	if not fs.exists(keyfile):
-		keyfile = os.path.join(dirname, filename.upper())  # this is literally for b9
-		if not fs.exists(keyfile):
-			prbad(f"{filename} does not exist on SD card!")
-			return retval
+		prbad(f"{filename} does not exist on SD card!")
+		return retval
 	if expectedSize:
 		fileSize = fs.getsize(keyfile)
 		if expectedSize != fileSize:
