@@ -79,6 +79,10 @@ if osver == "Darwin":
 
 	tmpprefix = "mset9-macos-run-"
 
+	def is_ios():
+		machine = os.uname().machine
+		return any(machine.startswith(e) for e in ["iPhone", "iPad"])
+
 	def tmp_cleanup():
 		global tmpprefix, systmp
 		prinfo("Removing temporary folders...")
@@ -161,9 +165,87 @@ if osver == "Darwin":
 	venv_bin = f"{venv_path}/bin"
 	venv_py = f"{venv_bin}/python3"
 
+	def check_ios_py_entitlement(path):
+		import subprocess
+		import xml.etree.ElementTree as ET
+		try:
+			result = subprocess.run(["ldid", "-e", path], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+			if result.returncode != 0:
+				prbad("Error #: Fail to check venv python ios entitlement")
+				prinfo(f"ldid error (ret={result.returncode})")
+				tmp_cleanup()
+				exitOnEnter()
+				#return False
+			tree = ET.fromstring(result.stdout)
+			result = 0  # 0: not found    1: wait key
+			for child in tree.find("./dict"):
+				if child.tag == "key" and child.text == "com.apple.private.security.disk-device-access":
+					result = 1
+				elif result == 0:
+					if child.tag == "true":
+						result = True
+						break
+					elif child.tag == "false":
+						result = False
+						break
+					else:
+						result = 0  # not valid, reset
+
+			if result == 0 or result == 1:
+				return False
+
+			return result
+
+		except FileNotFoundError:
+			return None
+
+	def fix_ios_py_entitlement(path):
+		import subprocess
+
+		basepath = os.path.dirname(path)
+
+		if os.path.islink(path):
+			import shutil
+			realpy = os.path.join(basepath, os.readlink(path))
+			os.remove(path)
+			shutil.copyfile(realpy, path)
+			shutil.copymode(realpy, path)
+
+		entaddxml = os.path.join(basepath, "entadd.xml")
+		with open(entaddxml, "w") as f:
+			f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+			f.write('<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n')
+			f.write('<plist version="1.0">\n')
+			f.write('<dict>\n')
+			f.write('\t<key>com.apple.private.security.disk-device-access</key>\n')
+			f.write('\t<true/>\n')
+			f.write('</dict>\n')
+			f.write('</plist>\n')
+
+		try:
+			args = ["ldid", "-M", f"-S{entaddxml}", path]
+			result = subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+			if result.returncode != 0:
+				prbad("Error #: Fail to modify venv python ios entitlement")
+				prinfo(f"ldid ret={result.returncode}")
+				prinfo("Message:")
+				prinfo(result.stderr)
+
+		except FileNotFoundError:
+			prbad("Error #: Fail to modify venv python ios entitlement")
+			prinfo("wtf? ldid disappeared?")
+			tmp_cleanup()
+			exitOnEnter()
+
 	def activate_venv():
 		global venv_path, venv_bin, venv_py, device, systmp
 		#import site
+
+		# assuming it's fine if ldid doesn't exist
+		if is_ios() and check_ios_py_entitlement(venv_py) == False:
+			prinfo("fixing entitlement...")
+			fix_ios_py_entitlement(venv_py)
+
 		os.environ["PATH"] = os.pathsep.join([venv_bin, *os.environ.get("PATH", "").split(os.pathsep)])
 		os.environ["VIRTUAL_ENV"] = venv_path
 		os.environ["VIRTUAL_ENV_PROMPT"] = "(mset9)"
@@ -181,18 +263,36 @@ if osver == "Darwin":
 		#sys.real_prefix = sys.prefix
 		#sys.prefix = venv_path
 
-	if "VIRTUAL_ENV" not in os.environ and os.path.exists(venv_py):
-		prinfo("venv found, activate it...")
+	def setup_venv():
+		import venv, subprocess
+		if "VIRTUAL_ENV" not in os.environ:
+			if os.path.exists(venv_bin):
+				import shutil
+				shutil.rmtree(venv_bin)
+			venv.create(venv_path, with_pip=True)
+		subprocess.run([venv_py, "-mensurepip"], cwd=venv_path)
+		subprocess.run([venv_py, "-mpip", "install", "pyfatfs"], cwd=venv_path)
 		activate_venv()
+
+	if "VIRTUAL_ENV" not in os.environ:
+		if os.path.exists(venv_py):
+			prinfo("venv found, activate it...")
+			activate_venv()
+		elif is_ios():
+			have_perm = check_ios_py_entitlement(sys.executable)
+			if have_perm == None:
+				prinfo("ldid not found, assume your python have proper entitlement")
+				prinfo("if fail later, please install ldid or fix your python manually")
+				prinfo("(require entitlement com.apple.private.security.disk-device-access)")
+			elif not have_perm:
+				prinfo("need entitlement fix, setting up venv for fixing automatically...")
+				setup_venv()
 
 	try:
 		from pyfatfs.PyFatFS import PyFatFS
 	except ModuleNotFoundError:
 		prinfo("PyFatFS not found, setting up venv for installing automatically...")
-		import venv, subprocess
-		venv.create(venv_path, with_pip=True)
-		subprocess.run(["bin/pip", "install", "pyfatfs"], cwd=venv_path)
-		activate_venv()
+		setup_venv()
 
 	# self elevate
 	if os.getuid() != 0:
@@ -221,8 +321,24 @@ if osver == "Darwin":
 	from pyfatfs.PyFatFS import PyFatFS
 	from pyfatfs.FATDirectoryEntry import FATDirectoryEntry, make_lfn_entry
 	from pyfatfs.EightDotThree import EightDotThree
-	from pyfatfs._exceptions import PyFATException
-	import struct
+	from pyfatfs._exceptions import PyFATException, NotAnLFNEntryException
+	import struct, errno
+
+	def _search_entry(self, name):
+		name = name.upper()
+		dirs, files, _ = self.get_entries()
+		for entry in dirs+files:
+			try:
+				if entry.get_long_name().upper() == name:
+					return entry
+			except NotAnLFNEntryException:
+				pass
+			if entry.get_short_name() == name:
+				return entry
+
+		raise PyFATException(f'Cannot find entry {name}',
+							 errno=errno.ENOENT)
+	FATDirectoryEntry._search_entry = _search_entry
 
 	def make_8dot3_name(dir_name, parent_dir_entry):
 		dirs, files, _ = parent_dir_entry.get_entries()
@@ -340,6 +456,10 @@ if osver == "Darwin":
 		if "Cannot open" in msg:
 			prbad("Error 14: Can't open device.")
 			prinfo("Please ensure your SD card is unmounted in disk utility.")
+			if is_ios():
+				prinfo("might also be ios entitlement issue")
+				prinfo("please install ldid or fix your python manually")
+				prinfo("(require entitlement com.apple.private.security.disk-device-access)")
 		elif "Invalid" in msg:
 			prbad("Error 15: Not FAT32 formatted or corrupted filesystem.")
 			prinfo("Please ensure your SD card is properly formatted")
@@ -353,7 +473,7 @@ if osver == "Darwin":
 	def cleanup(remount=False):
 		global fs, device
 		fs.close()
-		if remount:
+		if remount and not is_ios():
 			prinfo("Trying to remount SD card...")
 			run_diskutil_and_wait("mount", device)
 		#tmp_cleanup()
@@ -677,17 +797,10 @@ def remove():
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	global fs
-	split = keyfile.rsplit("/", 1)
-	if len(split) == 1:
-		dirname = "/"
-		filename = split[0]
-	else:
-		dirname, filename = split
+	filename = keyfile.rsplit("/")[-1]
 	if not fs.exists(keyfile):
-		keyfile = os.path.join(dirname, filename.upper())  # this is literally for b9
-		if not fs.exists(keyfile):
-			prbad(f"{filename} does not exist on SD card!")
-			return retval
+		prbad(f"{filename} does not exist on SD card!")
+		return retval
 	if expectedSize:
 		fileSize = fs.getsize(keyfile)
 		if expectedSize != fileSize:
