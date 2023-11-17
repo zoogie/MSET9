@@ -1,19 +1,65 @@
-firmware	region	oldnew	fopen		fread	
+MSET9 func addresses (src: https://ianburgwin.net/hax/firms)
 
-11.17x2		usa	old 	0805A071	0804ce99
-11.17		eur	old 	0805A071	0804ce99
-11.17		jpn	old 	0805A071	0804ce99
-11.17		usa	new	0805A071	0804ce5d
-11.17		eur	new	0805A071	0804ce5d
-11.16		usa	new	0805A071	0804ce5d
-11.16		kor	new	0805A071	0804ce5d
-11.15		usa	old 	0805A071	0804ce99
-11.14		kor	new	0805A071	0804ce5d
-11.13x2		usa	old 	0805A071	0804ce99
-11.8		usa	old	0805A071	0804ce99
-11.5		usa	new	08059E45	0804cc81
-11.4		usa	new	08059E45	0804cc81
-11.4		usa	old	08059E49	0804cc99
+OLD3DS-----------------------------------------------
+2.27-0_1.0_OLD.firm 	fopen:0806A97D fread:08053E2D *
+2.28-0_1.1_OLD.firm 	fopen:0806A97D fread:08053E2D *
+2.29-7_2.0_OLD.firm 	fopen:08065B2D fread:08058269 *
+2.30-18_2.1_OLD.firm 	fopen:08065AA5 fread:0805825D *
+2.31-40_2.2_OLD.firm 	fopen:08065C51 fread:0805830D *
+2.32-15_3.0_OLD.firm 	fopen:0805CCB9 fread:0804E525 
+2.33-4_4.0_OLD.firm 	fopen:0805CF05 fread:0804E315 
+2.34-0_4.1_OLD.firm 	fopen:0805CF05 fread:0804E315 
+2.35-6_5.0_OLD.firm 	fopen:0805B2BD fread:0804DB25 
+2.36-0_5.1_OLD.firm 	fopen:0805B2BD fread:0804DB25 
+2.37-0_6.0_OLD.firm 	fopen:0805AF89 fread:0804D8D9 
+2.38-0_6.1_OLD.firm 	fopen:0805AF89 fread:0804D8D9 
+2.39-0_7.0_OLD.firm 	fopen:0805ADA1 fread:0804D70D 
+2.40-0_7.2_OLD.firm 	fopen:0805ADA5 fread:0804D711 
+2.44-6_8.0_OLD.firm 	fopen:0805AF89 fread:0804D829 
+2.46-0_9.0_OLD.firm 	fopen:0805AF21 fread:0804D829 
+2.48-3_9.3_OLD.firm 	fopen:0805B015 fread:0804D841 
+2.49-0_9.5_OLD.firm 	fopen:0805B015 fread:0804D841 
+2.50-11_10.4_OLD.firm 	fopen:08059D11 fread:0804CC55 
+2.50-1_9.6_OLD.firm 	fopen:0805B181 fread:0804D9B1 
+2.50-7_10.0_OLD.firm 	fopen:08059D0D fread:0804CC51 
+2.50-9_10.2_OLD.firm 	fopen:08059D0D fread:0804CC51 
+2.51-0_11.0_OLD.firm 	fopen:08059D25 fread:0804CC19 
+2.51-2_11.1_OLD.firm 	fopen:08059D25 fread:0804CC19 
+2.52-0_11.2_OLD.firm 	fopen:08059D59 fread:0804CBE5 
+2.53-0_11.3_OLD.firm 	fopen:08059E35 fread:0804CC99 
+2.54-0_11.4_OLD.firm 	fopen:08059E49 fread:0804CC99 
+2.55-0_11.8_OLD.firm 	fopen:0805A071 fread:0804CE99 
+2.56-0_11.12_OLD.firm 	fopen:0805A071 fread:0804CE99 
+2.57-0_11.14_OLD.firm 	fopen:0805A071 fread:0804CE99 
+2.58-0_11.16_OLD.firm 	fopen:0805A071 fread:0804CE99 
+agb-4.0.bin 		fopen:08035A55 fread:0803BC35 +
+SAFE_MODE_3.0.firm 	fopen:0806A935 fread:08053D9D +
+
+NEW3DS-----------------------------------------------
+2.45-5_8.1-dec.bin 	fopen:0805BE95 fread:0804EDAD 
+2.46-0_9.0-dec.bin 	fopen:0805BD5D fread:0804ECE5 
+2.48-3_9.3-dec.bin 	fopen:0805B015 fread:0804D855 
+2.49-0_9.5-dec.bin 	fopen:0805B015 fread:0804D855 
+2.50-11_10.4-dec.bin 	fopen:08059D11 fread:0804CC19 
+2.50-1_9.6-dec.bin 	fopen:0805B181 fread:0804D9C5 
+2.50-7_10.0-dec.bin 	fopen:08059D0D fread:0804CC15 
+2.50-9_10.2-dec.bin 	fopen:08059D0D fread:0804CC15 
+2.51-0_11.0-dec.bin 	fopen:08059D21 fread:0804CBF9 
+2.51-2_11.1-dec.bin 	fopen:08059D21 fread:0804CBF9 
+2.52-0_11.2-dec.bin 	fopen:08059DBD fread:0804CC35 
+2.53-0_11.3-dec.bin 	fopen:08059E31 fread:0804CC79 
+2.54-0_11.4-dec.bin 	fopen:08059E45 fread:0804CC81 
+2.55-0_11.8-dec.bin 	fopen:0805A071 fread:0804CE5D 
+2.56-0_11.12-dec.bin 	fopen:0805A071 fread:0804CE5D 
+2.57-0_11.14-dec.bin 	fopen:0805A071 fread:0804CE5D 
+2.58-0_11.16-dec.bin 	fopen:0805A071 fread:0804CE5D 
+safe-dec.bin 		fopen:0805BE91 fread:0804EDA9 +
+twl-11.8-dec.bin 	fopen:0803596D fread:0803B5E5 +
+twl-8.1-dec.bin 	fopen:0803596D fread:0803B5E5 +
+
+
+* mset9 incompat
++ not tested but likely mset9 incompat
 
 patterns:
 fopen F7 B5 84 B0 04 98 0D 00
