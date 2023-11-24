@@ -39,6 +39,8 @@ https://3ds.hacks.guide/troubleshooting.html#installing-boot9strap-mset9
   A: Yeah, it kinda is but the scene's been doing this dangerous stuff for years. Just sit out the beta phase if concerned.
 - Q: What happens if I fail to uninstall the exploit when I'm done?<br>
   A: You'll have trouble launching previously installed titles, in addition to random crashes in FBI and System Settings. So make sure to clean up the exploit! (option 4 in the mset9.py menu does this)
+- Q: How to compile?<br>
+  A: Look up fopen/fread offsets in offsets.txt for your firmware and model of 3ds. Copy over the existing fopen/fread addresses in id1gen/id1gen.s with the addresses you picked. In root, run build.bat. Take the long hex string in out/haxID1_output.txt and place it in "encodedId1s" (pick one) in MSET9_installer_script/mset9.py. A decoded ID1 dir will also be in out/<32 chars of whatever>.
   
 (the rest of this is more FYI than anything important)
 

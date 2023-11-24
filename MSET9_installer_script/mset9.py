@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import abc, os, platform, time, binascii
 
-VERSION = "v1.2"
+VERSION = "v1.2c"
 
 def prgood(content):
 	print(f"[\033[0;32m✓\033[0m] {content}")
@@ -570,11 +570,11 @@ print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
 print("\n-- Please type in a number then hit return --\n")
-print("↓ Input one of these numbers!")
-print("1. Old 3DS, 11.8.0 to 11.17.0")
-print("2. New 3DS, 11.8.0 to 11.17.0")
-print("3. Old 3DS, 11.4.0 to 11.7.0")
-print("4. New 3DS, 11.4.0 to 11.7.0")
+print("Enter one of four these numbers!")
+print("Enter 1 for: Old 3DS, 11.8.0 to 11.17.0")
+print("Enter 2 for: New 3DS, 11.8.0 to 11.17.0")
+print("Enter 3 for: Old 3DS, 11.4.0 to 11.7.0")
+print("Enter 4 for: New 3DS, 11.4.0 to 11.7.0")
 
 encodedId1s = {
 	1: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900",
