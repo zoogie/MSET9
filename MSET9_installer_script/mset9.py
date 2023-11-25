@@ -713,8 +713,8 @@ def sanity():
 	
 	if not menuExtdataGood:
 		prbad("Error 04: No HOME Menu data!")
-		prinfo("This shouldn't really happen.")
-		prinfo("Put the SD card back into your console, turn it on and off again, then rerun this script.")
+		prinfo("Your SD is not formatted properly, or isn't being read by the console.")
+		prinfo("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
 		prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
 		exitOnEnter()
 	
