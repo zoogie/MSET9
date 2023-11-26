@@ -1,19 +1,18 @@
 Error 01: Not running on the SD Card root. /Nintendo 3DS/ not found.
 Error 02: Write protected SD Card. Ensure switch is facing up.
 Error 03: Attempting to change target console version during exploit.
-Error 04: No Home Menu Extdata. Shouldn't happen pretty much ever.
-Error 05: No Mii Maker Data, follow MSET9 Troublshooting page.
+Error 04: No Home Menu Extdata. SD needs reformatting, follow MSET9 Troubleshooting page.
+Error 05: No Mii Maker Data, follow MSET9 Troubleshooting page.
 Error 06: Not enough free space on disk. Clean out unused files.
-Error 07: Multiple ID0s, follow MSET9 Troublshooting page.
+Error 07: Multiple ID0s, follow MSET9 Troubleshooting page.
 Error 08: Missing/Malformed file. Reextract MSET9 zip file.
 Error 09: Could not change back into SD directory. Ensure the SD Card has been reinserted.
 Error 10: Database problem. Follow the troubleshooting to reset the DBs.
-Error 11: Running as MacOS. MacOS is not supported.
-Error 12: Multiple ID1s, follow MSET9 Troublshooting page.
+Error 12: Multiple ID1s, follow MSET9 Troubleshooting page.
 Error 13: Device doesn't exist.
 Error 14: Can't open device.
 Error 15: Not FAT32 formatted or corrupted filesystem.
 Error 16: Unable to umount SD card.
 Error 17: Root privilege is required.
 
-MSET9 Troublshooting Page: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9
+MSET9 Troubleshooting Page: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9
