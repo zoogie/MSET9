@@ -1,3 +1,6 @@
+# Read this first!
+This repository contains technical documentation and source code for the exploit.  If you are trying to use it to install homebrew, please follow [the guide on 3ds.hacks.guide](https://3ds.hacks.guide/installing-boot9strap-(mset9)) instead.
+
 # MSET9
 
 ## Thanks 
@@ -21,12 +24,9 @@ While mostly leading to null derefs, in one specific context, process9 jumps dir
 Source: [3Dbrew](https://www.3dbrew.org/wiki/3DS_System_Flaws#Process9)
 
 ## Can I do it?
--- You need a 3ds 11.4-11.17, any region (probably, haven't tested them all)<br>
--- A USB to SD reader<br>
--- Windows/MAC/Linux PC (this might be expanded to chromeOS and/or Android at some point, if possible)<br>
-
-## Directions
-In release archive or, preferably, [3DS Hacks Guide- MSET9](https://3ds.hacks.guide/installing-boot9strap-(mset9).html).<br>
+* You need a 3DS on firmware version 11.4-11.17, any region (probably, haven't tested them all)
+* A USB to SD reader, or a built-in SD card slot
+* A PC running Windows, macOS, Linux or chromeOS, or phone/tablet running Android
 
 ## Troubleshooting
 https://3ds.hacks.guide/troubleshooting.html#installing-boot9strap-mset9
