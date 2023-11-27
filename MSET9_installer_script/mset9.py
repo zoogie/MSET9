@@ -239,7 +239,7 @@ if osver == "Darwin":
 
 	def activate_venv():
 		global venv_path, venv_bin, venv_py, device, systmp
-		#import site
+		import site
 
 		# assuming it's fine if ldid doesn't exist
 		if is_ios() and check_ios_py_entitlement(venv_py) == False:
@@ -250,18 +250,19 @@ if osver == "Darwin":
 		os.environ["VIRTUAL_ENV"] = venv_path
 		os.environ["VIRTUAL_ENV_PROMPT"] = "(mset9)"
 
-		if systmp is None:
-			os.execlp(venv_py, venv_py, __file__, device)
-		else:
-			os.execlp(venv_py, venv_py, __file__, device, systmp)
+		#if systmp is None:
+		#	os.execlp(py_exec, venv_py, __file__, device)
+		#else:
+		#	os.execlp(py_exec, venv_py, __file__, device, systmp)
 
-		#prev_length = len(sys.path)
-		#for lib in "__LIB_FOLDERS__".split(os.pathsep):
-		#	path = os.path.realpath(os.path.join(venv_bin, lib))
-		#	site.addsitedir(path)
-		#	sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]
-		#sys.real_prefix = sys.prefix
-		#sys.prefix = venv_path
+		prev_length = len(sys.path)
+		ver = sys.version_info
+		ver_path = f"python{ver.major}.{ver.minor}"
+		path = os.path.realpath(os.path.join(venv_path, "lib", ver_path, "site-packages"))
+		site.addsitedir(path)
+		sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]
+		sys.real_prefix = sys.prefix
+		sys.prefix = venv_path
 
 	def setup_venv():
 		import venv, subprocess
@@ -293,6 +294,7 @@ if osver == "Darwin":
 	except ModuleNotFoundError:
 		prinfo("PyFatFS not found, setting up venv for installing automatically...")
 		setup_venv()
+		from pyfatfs.PyFatFS import PyFatFS
 
 	# self elevate
 	if os.getuid() != 0:
