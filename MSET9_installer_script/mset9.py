@@ -562,7 +562,8 @@ def writeProtectCheck():
 # Section: SD card free space
 # ensure 16MB free space
 if not fs.ensurespace(16777216):
-	prbad(f"Error 06: You need at least 16MB free space on your SD card, you have {(freeSpace / 1000000):.2f} bytes!")
+	#prbad(f"Error 06: You need at least 16MB free space on your SD card, you have {(freeSpace / 1000000):.2f} bytes!")
+	prbad(f"Error 06: You need at least 16MB free space on your SD card!")
 	prinfo("Please free up some space and try again.")
 	exitOnEnter()
 
@@ -573,10 +574,10 @@ print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
 print("\n-- Please type in a number then hit return --\n")
 print("Enter one of these four numbers!")
-print("Enter 1 for: Old 3DS, 11.8.0 to 11.17.0")
-print("Enter 2 for: New 3DS, 11.8.0 to 11.17.0")
-print("Enter 3 for: Old 3DS, 11.4.0 to 11.7.0")
-print("Enter 4 for: New 3DS, 11.4.0 to 11.7.0")
+print("Enter 1 for: Old 3DS/2DS, 11.8.0 to 11.17.0")
+print("Enter 2 for: New 3DS/2DS, 11.8.0 to 11.17.0")
+print("Enter 3 for: Old 3DS/2DS, 11.4.0 to 11.7.0")
+print("Enter 4 for: New 3DS/2DS, 11.4.0 to 11.7.0")
 
 encodedId1s = {
 	1: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900",
