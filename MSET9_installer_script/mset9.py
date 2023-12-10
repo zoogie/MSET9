@@ -692,7 +692,7 @@ def sanity():
 				fs.open(realId1Path + "/dbs/import.db", "x").close()
 
 			prinfo("Created empty databases.")
-		prinfo("Please initialize the title database by navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then rerun this script.")
+		prinfo("Please initialize the title database by inserting the SD into your console, powering it on, then navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then rerun this script.")
 		prinfo("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
 		exitOnEnter()
 	else:
