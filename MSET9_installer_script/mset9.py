@@ -534,6 +534,14 @@ else:
 
 
 	fs = OSFS(os.path.dirname(thisfile))
+	if os.stat(fs.root).st_dev == os.stat("/").st_dev:
+		prbad("Error 01: Script is not running on your SD card!")
+		exitOnEnter()
+
+	while not os.path.ismount(fs.root) and fs.root != os.path.dirname(fs.root):
+		fs.root = os.path.dirname(fs.root)
+
+	fs.reload()
 
 def clearScreen():
 	if osver == "Windows":
