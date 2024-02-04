@@ -534,6 +534,26 @@ else:
 
 
 	fs = OSFS(os.path.dirname(thisfile))
+	if os.stat(fs.root).st_dev == os.stat("/").st_dev:
+		prbad("Error 01: Script is not running on your SD card!")
+		exitOnEnter()
+
+	if not os.path.ismount(fs.root):
+		root = fs.root
+		while not os.path.ismount(root) and root != os.path.dirname(root):
+			root = os.path.dirname(root)
+
+		try:
+			for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/"]:
+				# Are the files disappearing going to scare the user?
+				shutil.move(f, os.path.join(root, f))
+		except FileNotFoundError as e:
+			prbad("Error 08: One or more files are missing!")
+			prinfo("Please re-extract the MSET9 zip file to the root of your SD card, overwriting any existing files when prompted.")
+			exitOnEnter()
+
+		fs.root = root
+		fs.reload()
 
 def clearScreen():
 	if osver == "Windows":
