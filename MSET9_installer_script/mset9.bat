@@ -32,4 +32,3 @@ if %errorlevel% EQU 0 python -3 mset9.py else (
       exit
     )
 )
-py -3 mset9.py
