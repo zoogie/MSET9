@@ -4,20 +4,22 @@ import abc, os, platform, time, binascii
 VERSION = "v1.2c"
 
 def prgood(content):
-	print(f"[\033[0;32m✓\033[0m] {content}")
+	# print(f"[\033[0;32m✓\033[0m] {content}")
+	# so that people aren't confused by the [?]. stupid Windows.
+	print(f"[\033[0;32mOK\033[0m] {content}")
 
 def prbad(content):
-	print(f"[\033[0;91mX\033[0m] {content}")
+	print(f"[\033[0;91mXX\033[0m] {content}")
 
 def prinfo(content):
-	print(f"[*] {content}")
+	print(f"[--] {content}")
 
 def cleanup(remount=False):
 	pass
 
 def exitOnEnter(errCode = 0, remount=False):
 	cleanup(remount)
-	input("[*] Press Enter to exit...")
+	input("[--] Press Enter to exit...")
 	exit(errCode)
 
 # wrapper for fs operations. can use pyfilesystem2 directly,
@@ -394,6 +396,8 @@ if osver == "Darwin":
 			self.reload()
 		def exists(self, path):
 			return self.fs.exists(path)
+		def isdir(self, path):
+			return self.fs.getinfo(path).is_dir
 		def mkdir(self, path):
 			self.fs.makedir(path)
 		def open(self, path, mode='r'):
@@ -421,6 +425,8 @@ if osver == "Darwin":
 			self.fs.removetree(path)
 		def copytree(self, src, dst):
 			self.fs.copydir(src, dst, create=True)
+		def listdir(self, path):
+			return self.fs.listdir(path)
 		def walk(self, path, topdown=False):  # topdown is ignored
 			for dir_path, dirs, files in self.fs.walk(path):
 				yield dir_path, list(map(lambda x: x.name, dirs)), list(map(lambda x: x.name, files))
@@ -493,6 +499,8 @@ else:
 			return os.path.join(self.root, path)
 		def exists(self, path):
 			return os.path.exists(self.abs(path))
+		def isdir(self, path):
+			return os.path.isdir(self.abs(path))
 		def mkdir(self, path):
 			os.mkdir(self.abs(path))
 		def open(self, path, mode='r'):
@@ -507,6 +515,8 @@ else:
 			shutil.rmtree(self.abs(path))
 		def copytree(self, src, dst):
 			shutil.copytree(self.abs(src), self.abs(dst))
+		def listdir(self, path):
+			return os.listdir(path)
 		def walk(self, path, topdown=False):
 			return os.walk(self.abs(path), topdown=topdown)
 		def is_writable(self):
@@ -533,7 +543,28 @@ else:
 			prinfo(f"Current dir: {self.root}")
 
 
-	fs = OSFS(os.path.dirname(thisfile))
+	scriptroot = os.path.dirname(thisfile)
+	if os.stat(scriptroot).st_dev == os.stat("/").st_dev:
+		prbad("Error 01: Script is not running on your SD card!")
+		prinfo(f"Current location: {scriptroot}")
+		exitOnEnter()
+
+	if not os.path.ismount(scriptroot):
+		root = scriptroot
+		while not os.path.ismount(root) and root != os.path.dirname(root):
+			root = os.path.dirname(root)
+
+		try:
+			for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/"]:
+				shutil.move(os.path.join(scriptroot, f), os.path.join(root, f))
+		except FileNotFoundError as e:
+			prbad("Error 08: One or more files are missing!")
+			prinfo("Please re-extract the MSET9 zip file to the root of your SD card, overwriting any existing files when prompted.")
+			exitOnEnter()
+
+		scriptroot = root
+
+	fs = OSFS(scriptroot)
 
 def clearScreen():
 	if osver == "Windows":
@@ -561,9 +592,9 @@ def writeProtectCheck():
 
 # Section: SD card free space
 # ensure 16MB free space
-if not fs.ensurespace(16777216):
+if not fs.ensurespace(16 * 1024 * 1024):
 	#prbad(f"Error 06: You need at least 16MB free space on your SD card, you have {(freeSpace / 1000000):.2f} bytes!")
-	prbad(f"Error 06: You need at least 16MB free space on your SD card!")
+	prbad("Error 06: You need at least 16MB free space on your SD card!")
 	prinfo("Please free up some space and try again.")
 	exitOnEnter()
 
@@ -572,74 +603,71 @@ print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
 print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
-print("\n-- Please type in a number then hit return --\n")
-print("Enter one of these four numbers!")
-print("Enter 1 for: Old 3DS/2DS, 11.8.0 to 11.17.0")
-print("Enter 2 for: New 3DS/2DS, 11.8.0 to 11.17.0")
-print("Enter 3 for: Old 3DS/2DS, 11.4.0 to 11.7.0")
-print("Enter 4 for: New 3DS/2DS, 11.4.0 to 11.7.0")
 
-encodedId1s = {
+print("\n-- Please type in a number then hit return --\n")
+
+consoleNames = {
+	1: "Old 3DS/2DS, 11.8.0 to 11.17.0",
+	2: "New 3DS/2DS, 11.8.0 to 11.17.0",
+	3: "Old 3DS/2DS, 11.4.0 to 11.7.0",
+	4: "New 3DS/2DS, 11.4.0 to 11.7.0"
+}
+
+print("Enter one of these four numbers!")
+for i in consoleNames:
+	print(f"Enter {i} for: {consoleNames[i]}")
+
+# print("Enter 1 for: Old 3DS/2DS, 11.8.0 to 11.17.0")
+# print("Enter 2 for: New 3DS/2DS, 11.8.0 to 11.17.0")
+# print("Enter 3 for: Old 3DS/2DS, 11.4.0 to 11.7.0")
+# print("Enter 4 for: New 3DS/2DS, 11.4.0 to 11.7.0")
+
+encodedID1s = {
 	1: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A0050899CE0408730064006D00630000900A0862003900",
 	2: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A0871A005085DCE0408730064006D00630000900A0862003900",
 	3: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08499E050899CC0408730064006D00630000900A0862003900",
 	4: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
 }
-hackedId1Encoded, consoleModel, consoleFirmware = "", "", ""
+
+consoleIndex = 0
+
 while 1:
 	try:
 		sysModelVerSelect = input(">>> ")
 		if sysModelVerSelect.startswith("11"):
 			prbad("Don't type the firmware version, just the selection number!")
-			sysModelVerSelect = 42
-		sysModelVerSelect = int(sysModelVerSelect)
+			continue
+
+		consoleIndex = int(sysModelVerSelect)
 	except KeyboardInterrupt:
 		print()
 		prgood("Goodbye!")
 		exitOnEnter(remount=True)
 	except:
-		sysModelVerSelect = 42
-	if sysModelVerSelect == 1:
-		hackedId1Encoded = encodedId1s[1]
-		consoleModel = "OLD3DS"
-		consoleFirmware = "11.8-11.17"
-		break
+		consoleIndex = 255
 
-	if sysModelVerSelect == 2:
-		hackedId1Encoded = encodedId1s[2]
-		consoleModel = "NEW3DS"
-		consoleFirmware = "11.8-11.17"
-		break
-
-	if sysModelVerSelect == 3:
-		hackedId1Encoded = encodedId1s[3]
-		consoleModel = "OLD3DS"
-		consoleFirmware = "11.4-11.7"
-		break
-
-	if sysModelVerSelect == 4:
-		hackedId1Encoded = encodedId1s[4]
-		consoleModel = "NEW3DS"
-		consoleFirmware = "11.4-11.7"
-		break
-
-	else:
+	if consoleIndex > 4:
 		prbad("Invalid input, try again. Valid inputs: 1, 2, 3, 4")
+		continue
 
-trigger = "002F003A.txt"  # all 3ds ":/" in hex
-hackedId1 = bytes.fromhex(hackedId1Encoded).decode("utf-16le")  # ID1 - arm injected payload in readable format
-id1 = ""
-id0 = ""
-realId1Path = ""
+	break
+
+ID0, ID0Count, ID1, ID1Count = "", 0, "", 0
+
+#haxStates = ["Not set up", "Set up", "Injected"]
+#haxState = 0
+
+realID1Path = ""
+realID1BackupTag = "_user-id1"
+
+hackedID1 = bytes.fromhex(encodedID1s[consoleIndex]).decode("utf-16le")  # ID1 - arm injected payload in readable f
+hackedID1Path = ""
 
 extdataRoot = ""
-realId1BackupTag = "_user-id1"
-id0Count = 0
-id1Count = 0
-id0List = []
-
 homeMenuExtdata = [0x8F, 0x98, 0x82, 0xA1, 0xA9, 0xB1]  # us,eu,jp,ch,kr,tw
 miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,tw
+trigger = "002F003A.txt"  # all 3ds ":/" in hexormat
+
 
 # make a table so we can print regions based on what hex code from the above is found
 regionTable = {
@@ -652,70 +680,106 @@ regionTable = {
 }				
 
 homeDataPath, miiDataPath, homeHex, miiHex = "", "", 0x0, 0x0
+# def sanity():
+# 	global fs, haxState, RealID1Path, id0, id1, homeDataPath, miiDataPath, homeHex, miiHex
+#
+# 	print()
+# 	prinfo("Performing sanity checks...")
+#
+# 	writeProtectCheck()
+#
+
+
+def createHaxID1():
+	global fs, ID0, hackedID1Path, realID1Path, realID1BackupTag
+
+	if hackedID1Path and fs.exists(hackedID1Path):
+		prinfo("Hacked ID1 already exists!")
+		prinfo("Are you looking to do the sanity checks? Enter '2' instead.")
+		return
+
+	print("\033[0;33m=== DISCLAIMER ===\033[0m") # 5;33m? The blinking is awesome but I also don't want to frighten users lol
+	print()
+	print("This process will temporarily reset all your 3DS data.")
+	print("All your applications and themes will disappear.")
+	print("This is perfectly normal, and if everything goes right. it will re-appear")
+	print("at the end of the process.")
+	print()
+	print("In any case, you are free to make a backup of your SD card's contents.")
+	print("(Especially the 'Nintendo 3DS' folder.)")
+	print()
+
+	if osver == "Linux": # ...
+		print("(on Linux, things like to not go right - please ensure that your SD card is mounted with the 'utf8' option.)")
+		print()
+
+	print("Press Enter to continue.")
+	print("Press CTRL+C / Command+C to cancel.")
+	try:
+		input()
+	except KeyboardInterrupt:
+		prinfo("Cancelled.")
+		exitOnEnter()
+
+	hackedID1Path = ID0 + "/" + hackedID1
+
+	if realID1BackupTag not in realID1Path:
+		prinfo("Backing up original ID1...")
+		fs.rename(realID1Path, realID1Path + realID1BackupTag)
+
+	prinfo("Creating hacked ID1...")
+	fs.mkdir(hackedID1Path)
+	#fs.mkdir(hackedID1Path + "/extdata")
+	fs.mkdir(hackedID1Path + "/dbs")
+	fs.open (hackedID1Path + "/dbs/title.db", "w").close()
+	fs.open (hackedID1Path + "/dbs/import.db", "w").close()
+
+	prgood("Created hacked ID1.")
+	exitOnEnter()
+
+
 def sanity():
-	global fs, haxState, realId1Path, id0, id1, homeDataPath, miiDataPath, homeHex, miiHex
+	global fs, hackedID1Path
+
 	menuExtdataGood = False
 	miiExtdataGood = False
 
-	print()
-	prinfo("Performing sanity checks...")
+	if not hackedID1Path or not fs.exists(hackedID1Path):
+		prbad("Hacked ID1 does not exist!")
 
-	writeProtectCheck()
-
-	prinfo("Ensuring extracted files exist...")
-	fileSanity = 0
-	fileSanity += softcheck("boot9strap/boot9strap.firm", 0, 0x08129C1F, 1)
-	fileSanity += softcheck("boot.firm", retval = 1)
-	fileSanity += softcheck("boot.3dsx", retval = 1)
-	fileSanity += softcheck("b9", retval = 1)
-	fileSanity += softcheck("SafeB9S.bin", retval = 1)
-	if fileSanity > 0:
-		prbad("Error 08: One or more files are missing or malformed!")
-		prinfo("Please re-extract the MSET9 zip file, overwriting any existing files when prompted.")
-		exitOnEnter()
-	prgood("All files look good!")
+		prinfo("Creating hacked ID1 now.")
+		createHaxID1()
 
 	prinfo("Checking databases...")
-	checkTitledb = softcheck(realId1Path + "/dbs/title.db", 0x31E400, 0, 1)
-	checkImportdb = softcheck(realId1Path + "/dbs/import.db", 0x31E400, 0, 1)
+	checkTitledb = softcheck(hackedID1Path + "/dbs/title.db", 0x31E400, 0, 1)
+	checkImportdb = softcheck(hackedID1Path + "/dbs/import.db", 0x31E400, 0, 1)
 	if checkTitledb or checkImportdb:
-		prbad("Error 10: Database(s) malformed or missing!")
-		if not (
-			fs.exists(realId1Path + "/dbs/import.db")
-			or fs.exists(realId1Path + "/dbs/title.db")
-		):
-			if not fs.exists(realId1Path + "/dbs"):
-				fs.mkdir(realId1Path + "/dbs")
-			if checkTitledb:
-				fs.open(realId1Path + "/dbs/title.db", "x").close()
-			if checkImportdb:
-				fs.open(realId1Path + "/dbs/import.db", "x").close()
+		prbad("Error 10: Databases not initialized!")
 
-			prinfo("Created empty databases.")
+		# The files should exist. We created them when we created the hacked ID1
 		prinfo("Please initialize the title database by inserting the SD into your console, powering it on, then navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then rerun this script.")
 		prinfo("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
 		exitOnEnter()
 	else:
 		prgood("Databases look good!")
 	
-	if fs.exists(realId1Path + "/extdata/" + trigger):
+	if fs.exists(hackedID1Path + "/extdata/" + trigger):
 		prinfo("Removing stale trigger...")
-		fs.remove(realId1Path + "/extdata/" + trigger)
+		fs.remove(hackedID1Path + "/extdata/" + trigger)
 	
-	extdataRoot = realId1Path + "/extdata/00000000"
+	extdataRoot = hackedID1Path + "/extdata/00000000"
 
 	prinfo("Checking for HOME Menu extdata...")
 	for i in homeMenuExtdata:
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
 		if fs.exists(extdataRegionCheck):
 			prgood(f"Detected {regionTable[i]} HOME Menu data!")
-			homeHex = i
-			homeDataPath = extdataRegionCheck
 			menuExtdataGood = True
 			break
 	
 	if not menuExtdataGood:
 		prbad("Error 04: No HOME Menu data!")
+		# L+R+Down+B
 		prinfo("Your SD is not formatted properly, or isn't being read by the console.")
 		prinfo("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
 		prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
@@ -726,8 +790,6 @@ def sanity():
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
 		if fs.exists(extdataRegionCheck):
 			prgood("Found Mii Maker data!")
-			miiHex = i
-			miiDataPath = extdataRegionCheck
 			miiExtdataGood = True
 			break
 	
@@ -736,66 +798,47 @@ def sanity():
 		prinfo("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
 		exitOnEnter()
 
+	prgood("All files seem to be OK!")
+
 def injection():
-	global fs, realId1Path, id1
+	global fs, hackedID1Path, trigger
 
-	if not fs.exists(id0 + "/" + hackedId1):
-		prinfo("Creating hacked ID1...")
-		hackedId1Path = id0 + "/" + hackedId1
-		fs.mkdir(hackedId1Path)
-		fs.mkdir(hackedId1Path + "/extdata")
-		fs.mkdir(hackedId1Path + "/extdata/00000000")
-	else:
-		prinfo("Reusing existing hacked ID1...")
-		hackedId1Path = id0 + "/" + hackedId1
+	if not hackedID1Path or not fs.exists(hackedID1Path):
+		prbad("Hacked ID1 does not exist!")
 
-	if not fs.exists(hackedId1Path + "/dbs"):
-		prinfo("Copying databases to hacked ID1...")
-		fs.copytree(realId1Path + "/dbs", hackedId1Path + "/dbs")
+		prinfo("Creating hacked ID1 now.")
+		createHaxID1()
 
-	prinfo("Copying extdata to hacked ID1...")
-	if not fs.exists(hackedId1Path + f"/extdata/00000000/{homeHex:08X}"):
-		fs.copytree(homeDataPath, hackedId1Path + f"/extdata/00000000/{homeHex:08X}")
-	if not fs.exists(hackedId1Path + f"/extdata/00000000/{miiHex:08X}"):
-		fs.copytree(miiDataPath, hackedId1Path + f"/extdata/00000000/{miiHex:08X}")
+	triggerFilePath = hackedID1Path + "/extdata/" + trigger
+
+	if fs.exists(triggerFilePath):
+		fs.remove(triggerFilePath)
+		prinfo("Removed trigger file.")
+		prinfo("Please restart from the beginning of Section III.")
+		return
 
 	prinfo("Injecting trigger file...")
-	triggerFilePath = id0 + "/" + hackedId1 + "/extdata/" + trigger
-	if not fs.exists(triggerFilePath):
-		with fs.open(triggerFilePath, "w") as f:
-			f.write("plz be haxxed mister arm9, thx")
-			f.close()
-	
-	if fs.exists(realId1Path) and realId1BackupTag not in realId1Path:
-		prinfo("Backing up real ID1...")
-		fs.rename(realId1Path, realId1Path + realId1BackupTag)
-		id1 += realId1BackupTag
-		realId1Path = f"{id0}/{id1}"
-	else:
-		prinfo("Skipping backup because a backup already exists!")
-
-
+	with fs.open(triggerFilePath, 'w') as f:
+		#f.write("not so useless FAT-fs null deref")
+		f.write("pls be haxxed mister arm9, thx")
+		f.close()
 	prgood("MSET9 successfully injected!")
 
 def remove():
-	global fs, realId1Path, id0, id1
+	global fs, ID0, ID1, hackedID1Path, realID1Path, realID1BackupTag
+
 	prinfo("Removing MSET9...")
 
-	if fs.exists(realId1Path) and realId1BackupTag in realId1Path:
-		prinfo("Renaming original Id1...")
-		fs.rename(realId1Path, id0 + "/" + id1[:32])
-	else: 
-		prgood("Nothing to remove!")
-		return
-	
-	# print(id1_path, id1_root+"/"+id1[:32])
-	for id1Index in range(1,5): # Attempt to remove *all* hacked id1s
-		maybeHackedId = bytes.fromhex(encodedId1s[id1Index]).decode("utf-16le")
-		if fs.exists(id0 + "/" + maybeHackedId):
-			prinfo("Deleting hacked ID1...")
-			fs.rmtree(id0 + "/" + maybeHackedId)
-	id1 = id1[:32]
-	realId1Path = id0 + "/" + id1
+	if hackedID1Path and fs.exists(hackedID1Path):
+		prinfo("Deleting hacked ID1...")
+		fs.rmtree(hackedID1Path)
+
+	if fs.exists(realID1Path) and realID1BackupTag in realID1Path:
+		prinfo("Renaming original ID1...")
+		fs.rename(realID1Path, ID0 + "/" + ID1[:32])
+		ID1 = ID1[:32]
+		realID1Path = ID0 + "/" + ID1
+
 	prgood("Successfully removed MSET9!")
 
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
@@ -820,95 +863,147 @@ def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	prgood(f"{filename} looks good!")
 	return 0
 
+def is3DSID(name):
+	if not len(name) == 32:
+		return False
+
+	try:
+		hex_test = int(name, 0x10)
+	except:
+		return False
+
+	return True
+
+
+# Section: Sanity checks A (global files required for exploit)
+writeProtectCheck()
+
+prinfo("Ensuring extracted files exist...")
+
+fileSanity = 0
+fileSanity += softcheck("boot9strap/boot9strap.firm", 0, 0x08129C1F, 1)
+fileSanity += softcheck("boot.firm", retval = 1)
+fileSanity += softcheck("boot.3dsx", retval = 1)
+fileSanity += softcheck("b9", retval = 1)
+fileSanity += softcheck("SafeB9S.bin", retval = 1)
+
+if fileSanity > 0:
+	prbad("Error 08: One or more files are missing or malformed!")
+	prinfo("Please re-extract the MSET9 zip file, overwriting any existing files when prompted.")
+	exitOnEnter()
+
+# prgood("All files look good!")
+
 # Section: sdwalk
-for root, dirs, files in fs.walk("Nintendo 3DS/", topdown=True):
+for dirname in fs.listdir("Nintendo 3DS/"):
+	fullpath = "Nintendo 3DS/" + dirname
 
-	for name in dirs:
-		# If the name doesn't contain sdmc (Ignores MSET9 exploit folder)
-		if "sdmc" not in name and len(name[:32]) == 32:
-			try:
-				# Check to see if the file name encodes as an int (is hex only)
-				hexVerify = int(name[:32], 16)
-			except:
-				continue
-			if type(hexVerify) is int:
-				# Check if the folder (which is either id1 or id0) has the extdata folder
-				# if it does, it's an id1 folder
-				if fs.exists(os.path.join(root, name) + "/extdata"):
-					id1Count += 1
-					id1 = name
-					id0 = root
-					realId1Path = os.path.join(root, name)
+	if not fs.isdir(fullpath):
+		prinfo(f"Found file in Nintendo 3DS folder? '{dirname}'")
+		continue
 
-				# Otherwise, add it to the id0 list because we need to make sure we only have one id0
-				else:
-					if len(name) == 32:
-						id0Count += 1
-						id0List.append(os.path.join(root, name))
+	if not is3DSID(dirname):
+		continue
 
-	for name in dirs: # Run the check for existing install after figuring out the structure
-		# Check if we have an MSET9 Hacked id1 folder
-		if "sdmc" in name and len(name) == 32:
-		# If the MSET9 folder doesn't match the proper haxid1 for the selected console version
-			if hackedId1 != name:
-				prbad("Error 03: Don't change console model/version in the middle of MSET9!")
-				prbad("Please restart the setup.")
-				remove()
-				exitOnEnter()
+	prinfo(f"Detected ID0: {dirname}")
+	ID0 = fullpath
+	ID0Count += 1
 
-
-prinfo("Detected ID0(s):")
-for i in id0List:
-	prinfo(i)
-print()
-if id0Count != 1:
-	prbad(f"Error 07: You don't have 1 ID0 in your Nintendo 3DS folder, you have {id0Count}!")
+if ID0Count != 1:
+	prbad(f"Error 07: You don't have 1 ID0 in your Nintendo 3DS folder, you have {ID0Count}!")
 	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
 	exitOnEnter()
 
-if id1Count != 1:
-	prbad(f"Error 12: You don't have 1 ID1 in your Nintendo 3DS folder, you have {id1Count}!")
+for dirname in fs.listdir(ID0):
+	fullpath = ID0 + "/" + dirname
+
+	if not fs.isdir(fullpath):
+		prinfo(f"Found file in ID0 folder? '{dirname}'")
+		continue
+
+	if is3DSID(dirname[:32]):
+		prinfo(f"Detected ID1: {dirname}")
+		ID1 = dirname
+		realID1Path = ID0 + "/" + ID1
+		ID1Count += 1
+	elif "sdmc" in dirname and len(dirname) == 32:
+		currentHaxID1enc = dirname.encode("utf-16le").hex().upper()
+		currentHaxID1index = 0
+
+		for haxID1index in encodedID1s:
+			if currentHaxID1enc == encodedID1s[haxID1index]:
+				currentHaxID1index = haxID1index
+				break
+
+		if currentHaxID1index == 0 or (hackedID1Path and fs.exists(hackedID1Path)): # shouldn't happen
+			prbad("Unrecognized/duplicate hax ID1 in ID0 folder, removing!")
+			fs.rmtree(ID0 + "/" + dirname)
+		elif currentHaxID1index != consoleIndex:
+			prbad("Error 03: Don't change console model/version in the middle of MSET9!")
+			print(f"Earlier, you selected: '[{currentHaxID1index}.] {consoleNames[currentHaxID1index]}'")
+			print(f"Now, you selected:     '[{consoleIndex}.] {consoleNames[consoleIndex]}'")
+			print()
+			print(f"Switch to '[{consoleIndex}.] {consoleNames[consoleIndex]}' ?")
+			print("Press Enter to continue.")
+			print("Press CTRL+C / Command+C to cancel.")
+			try:
+				input()
+			except KeyboardInterrupt:
+				prinfo("Cancelled.")
+				hackedID1Path = ID0 + "/" + dirname
+				remove()
+				exitOnEnter()
+
+			fs.rename(ID0 + "/" + dirname, ID0 + "/" + hackedID1)
+
+		hackedID1Path = ID0 + "/" + hackedID1
+
+if ID1Count != 1:
+	prbad(f"Error 12: You don't have 1 ID1 in your Nintendo 3DS folder, you have {ID1Count}!")
 	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
 	exitOnEnter()
 
 clearScreen()
 print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
-print(f"Using {consoleModel} {consoleFirmware}")
+print(f"Using {consoleNames[consoleIndex]}")
 
 print("\n-- Please type in a number then hit return --\n")
+
 print("↓ Input one of these numbers!")
-print("1. Perform sanity checks")
-print("2. Inject MSET9 payload")
-print("3. Remove MSET9")
-print("4. Exit")
+print("1. Create MSET9 ID1")
+print("2. Perform sanity checks")
+print("3. Inject MSET9 trigger")
+print("4. Remove MSET9")
+print("0. Exit")
 
 while 1:
 	try:
-		sysModelVerSelect = int(input(">>> "))
+		optSelect = int(input(">>> "))
 	except KeyboardInterrupt:
-		sysModelVerSelect = 4 # exit on Ctrl+C
+		optSelect = 0 # exit on Ctrl+C
 		print()
 	except:
-		sysModelVerSelect = 42
+		optSelect = 255
 
-	fs.reload()
+	fs.reload() # (?)
 
-	if sysModelVerSelect == 1:
+	if optSelect == 1:
+		createHaxID1()
+	elif optSelect == 2:
 		sanity()
-		prgood("Everything appears to be functional!\n")
 		exitOnEnter()
-	elif sysModelVerSelect == 2:
+	elif optSelect == 3:
 		sanity()
 		injection()
 		exitOnEnter()
-	elif sysModelVerSelect == 3:
+	elif optSelect == 4:
 		remove()
-		remove_extra()
+		remove_extra() # (?)
 		exitOnEnter(remount=True)
-	elif sysModelVerSelect == 4 or "exit":
+	elif sysModelVerSelect == 0 or "exit":
 		break
 	else:
-		prinfo("Invalid input, try again. Valid inputs: 1, 2, 3, 4")
+		prinfo("Invalid input, try again. Valid inputs: 1, 2, 3, 4, 0")
 
 cleanup(remount=True)
 prgood("Goodbye!")
