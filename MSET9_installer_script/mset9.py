@@ -572,6 +572,26 @@ def clearScreen():
 	else:
 		os.system("clear")
 
+# -1: Cancelled
+def getInput(maximum, minimum=1):
+	while 1:
+		try:
+			opt = int(input(">>> "))
+		except KeyboardInterrupt:
+			return -1
+		except EOFError:
+			return -1
+		except ValueError:
+			opt = 255
+
+		if opt > maximum or opt < minimum:
+			# prbad(f"Invalid input, try again. Valid inputs: {*range(minimum, maximum)}") :v
+			inputs = ', '.join(str(i) for i in range(minimum, maximum + 1))
+			prbad(f"Invalid input, try again. Valid inputs: {inputs}")
+			continue
+
+		return opt
+
 # Section: insureRoot
 if not fs.exists("Nintendo 3DS/"):
 	prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
@@ -629,33 +649,16 @@ encodedID1s = {
 	4: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
 }
 
-consoleIndex = 0
-
-while 1:
-	try:
-		sysModelVerSelect = input(">>> ")
-		if sysModelVerSelect.startswith("11"):
-			prbad("Don't type the firmware version, just the selection number!")
-			continue
-
-		consoleIndex = int(sysModelVerSelect)
-	except KeyboardInterrupt:
-		print()
-		prgood("Goodbye!")
-		exitOnEnter(remount=True)
-	except:
-		consoleIndex = 255
-
-	if consoleIndex > 4:
-		prbad("Invalid input, try again. Valid inputs: 1, 2, 3, 4")
-		continue
-
-	break
+consoleIndex = getInput(maximum=4)
+if consoleIndex < 0:
+	print()
+	prgood("Goodbye!")
+	exitOnEnter(remount=True)
 
 ID0, ID0Count, ID1, ID1Count = "", 0, "", 0
 
-#haxStates = ["Not set up", "Set up", "Injected"]
-#haxState = 0
+haxStates = ["\033[30;1m ID1 not created \033[0m", "\033[33;1m Not ready to inject \033[0m", "\033[32m Ready to inject \033[0m", "\033[32;1m Injected \033[0m"]
+haxState = 0
 
 realID1Path = ""
 realID1BackupTag = "_user-id1"
@@ -666,7 +669,8 @@ hackedID1Path = ""
 extdataRoot = ""
 homeMenuExtdata = [0x8F, 0x98, 0x82, 0xA1, 0xA9, 0xB1]  # us,eu,jp,ch,kr,tw
 miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,tw
-trigger = "002F003A.txt"  # all 3ds ":/" in hexormat
+trigger = "002F003A.txt"  # all 3ds ":/" in hex format
+triggerFilePath = ""
 
 
 # make a table so we can print regions based on what hex code from the above is found
@@ -695,7 +699,7 @@ def createHaxID1():
 
 	if hackedID1Path and fs.exists(hackedID1Path):
 		prinfo("Hacked ID1 already exists!")
-		prinfo("Are you looking to do the sanity checks? Enter '2' instead.")
+		# prinfo("Are you looking to do the sanity checks? Enter '2' instead.")
 		return
 
 	print("\033[0;33m=== DISCLAIMER ===\033[0m") # 5;33m? The blinking is awesome but I also don't want to frighten users lol
@@ -713,13 +717,14 @@ def createHaxID1():
 		print("(on Linux, things like to not go right - please ensure that your SD card is mounted with the 'utf8' option.)")
 		print()
 
-	print("Press Enter to continue.")
-	print("Press CTRL+C / Command+C to cancel.")
-	try:
-		input()
-	except KeyboardInterrupt:
+	print("Input '1' again to confirm.")
+	print("Input '2' to cancel.")
+	time.sleep(3)
+	if getInput(maximum=2) != 1:
+		print()
 		prinfo("Cancelled.")
-		exitOnEnter()
+		exitOnEnter(remount=True)
+
 
 	hackedID1Path = ID0 + "/" + hackedID1
 
@@ -737,35 +742,21 @@ def createHaxID1():
 	prgood("Created hacked ID1.")
 	exitOnEnter()
 
+titleDatabasesGood = False
+menuExtdataGood = False
+miiExtdataGood = False
 
 def sanity():
-	global fs, hackedID1Path
-
-	menuExtdataGood = False
-	miiExtdataGood = False
-
-	if not hackedID1Path or not fs.exists(hackedID1Path):
-		prbad("Hacked ID1 does not exist!")
-
-		prinfo("Creating hacked ID1 now.")
-		createHaxID1()
+	global fs, hackedID1Path, titleDatabasesGood, menuExtdataGood, miiExtdataGood
 
 	prinfo("Checking databases...")
 	checkTitledb = softcheck(hackedID1Path + "/dbs/title.db", 0x31E400, 0, 1)
 	checkImportdb = softcheck(hackedID1Path + "/dbs/import.db", 0x31E400, 0, 1)
-	if checkTitledb or checkImportdb:
-		prbad("Error 10: Databases not initialized!")
-
-		# The files should exist. We created them when we created the hacked ID1
-		prinfo("Please initialize the title database by inserting the SD into your console, powering it on, then navigating to System Settings -> Data Management -> Nintendo 3DS -> Software -> Reset, then rerun this script.")
-		prinfo("Visual guide: https://3ds.hacks.guide/images/screenshots/database-reset.jpg")
-		exitOnEnter()
-	else:
-		prgood("Databases look good!")
+	titleDatabasesGood = not (checkTitledb or checkImportdb)
 	
-	if fs.exists(hackedID1Path + "/extdata/" + trigger):
-		prinfo("Removing stale trigger...")
-		fs.remove(hackedID1Path + "/extdata/" + trigger)
+	# if fs.exists(hackedID1Path + "/extdata/" + trigger):
+	# 	prinfo("Removing stale trigger...")
+	# 	fs.remove(hackedID1Path + "/extdata/" + trigger)
 	
 	extdataRoot = hackedID1Path + "/extdata/00000000"
 
@@ -773,48 +764,57 @@ def sanity():
 	for i in homeMenuExtdata:
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
 		if fs.exists(extdataRegionCheck):
-			prgood(f"Detected {regionTable[i]} HOME Menu data!")
+			# prgood(f"Detected {regionTable[i]} HOME Menu data!")
 			menuExtdataGood = True
 			break
-	
-	if not menuExtdataGood:
-		prbad("Error 04: No HOME Menu data!")
-		# L+R+Down+B
-		prinfo("Your SD is not formatted properly, or isn't being read by the console.")
-		prinfo("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
-		prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
-		exitOnEnter()
 	
 	prinfo("Checking for Mii Maker extdata...")
 	for i in miiMakerExtdata:
 		extdataRegionCheck = extdataRoot + f"/{i:08X}"
 		if fs.exists(extdataRegionCheck):
-			prgood("Found Mii Maker data!")
+			# prgood("Found Mii Maker data!")
 			miiExtdataGood = True
 			break
-	
-	if not miiExtdataGood:
-		prbad("Error 05: No Mii Maker data!")
-		prinfo("Please go to https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
-		exitOnEnter()
 
-	prgood("All files seem to be OK!")
+	return menuExtdataGood and miiExtdataGood and titleDatabasesGood
+
+def sanityReport():
+	if not menuExtdataGood:
+		prbad("HOME menu extdata: Missing!")
+		prinfo("Please power on your console with your SD inserted, then check again.")
+		prinfo("If this does not work, power it on while holding L+R+Down+B.")
+	else:
+		prgood("HOME menu extdata: OK!")
+
+	print()
+
+	if not miiExtdataGood:
+		prbad("Mii Maker extdata: Missing!")
+		prinfo("Please power on your console with your SD inserted, then launch Mii Maker.")
+	else:
+		prgood("Mii Maker extdata: OK!")
+
+	print()
+
+	if not titleDatabasesGood:
+		prbad("Title database: Not initialized!")
+		prinfo("Please power on your console with your SD inserted, open System Setttings,")
+		prinfo("navigate to Data Management -> Nintendo 3DS -> Software, then select Reset.")
+	else:
+		prgood("Title database: OK!")
+
+	print()
+
+	exitOnEnter()
 
 def injection():
-	global fs, hackedID1Path, trigger
-
-	if not hackedID1Path or not fs.exists(hackedID1Path):
-		prbad("Hacked ID1 does not exist!")
-
-		prinfo("Creating hacked ID1 now.")
-		createHaxID1()
+	global fs, haxState, hackedID1Path, trigger
 
 	triggerFilePath = hackedID1Path + "/extdata/" + trigger
 
 	if fs.exists(triggerFilePath):
 		fs.remove(triggerFilePath)
 		prinfo("Removed trigger file.")
-		prinfo("Please restart from the beginning of Section III.")
 		return
 
 	prinfo("Injecting trigger file...")
@@ -826,6 +826,19 @@ def injection():
 
 def remove():
 	global fs, ID0, ID1, hackedID1Path, realID1Path, realID1BackupTag
+
+	if haxState == 3:
+		prinfo("MSET9 trigger is still injected!")
+		print()
+		prinfo("Enter '1' to only remove the MSET9 trigger.")
+		prinfo("Enter '2' to remove the MSET9 ID1 entirely.")
+		resp = getInput(2)
+		if resp < 0:
+			return
+
+		elif resp == 1:
+			injection()
+			return
 
 	prinfo("Removing MSET9...")
 
@@ -844,22 +857,27 @@ def remove():
 def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 	global fs
 	filename = keyfile.rsplit("/")[-1]
+
 	if not fs.exists(keyfile):
 		prbad(f"{filename} does not exist on SD card!")
 		return retval
-	if expectedSize:
-		fileSize = fs.getsize(keyfile)
-		if expectedSize != fileSize:
-			prbad(f"{filename} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
-			return retval
-	elif crc32:
+
+	fileSize = fs.getsize(keyfile)
+	if not fileSize:
+		prbad(f"{filename} is an empty file!")
+		return retval
+	elif expectedSize and fileSize != expectedSize:
+		prbad(f"{filename} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
+		return retval
+
+	if crc32:
 		with fs.open(keyfile, "rb") as f:
 			checksum = binascii.crc32(f.read())
+			f.close()
 			if crc32 != checksum:
 				prbad(f"{filename} was not recognized as the correct file")
-				f.close()
 				return retval
-			f.close()
+
 	prgood(f"{filename} looks good!")
 	return 0
 
@@ -937,26 +955,46 @@ for dirname in fs.listdir(ID0):
 
 		if currentHaxID1index == 0 or (hackedID1Path and fs.exists(hackedID1Path)): # shouldn't happen
 			prbad("Unrecognized/duplicate hax ID1 in ID0 folder, removing!")
-			fs.rmtree(ID0 + "/" + dirname)
+			fs.rmtree(fullpath)
 		elif currentHaxID1index != consoleIndex:
 			prbad("Error 03: Don't change console model/version in the middle of MSET9!")
 			print(f"Earlier, you selected: '[{currentHaxID1index}.] {consoleNames[currentHaxID1index]}'")
 			print(f"Now, you selected:     '[{consoleIndex}.] {consoleNames[consoleIndex]}'")
 			print()
-			print(f"Switch to '[{consoleIndex}.] {consoleNames[consoleIndex]}' ?")
-			print("Press Enter to continue.")
-			print("Press CTRL+C / Command+C to cancel.")
-			try:
-				input()
-			except KeyboardInterrupt:
-				prinfo("Cancelled.")
-				hackedID1Path = ID0 + "/" + dirname
-				remove()
-				exitOnEnter()
+			print("Please re-enter the number for your console model and version.")
 
-			fs.rename(ID0 + "/" + dirname, ID0 + "/" + hackedID1)
+			while True:
+				try:
+					choice = int(input(">>> "))
+				except KeyboardInterrupt:
+					prinfo("Cancelled.")
+					hackedID1Path = fullpath
+					remove()
+					exitOnEnter()
+				except ValueError:
+					choice = 255
+
+				if choice != consoleIndex and choice != currentHaxID1index:
+					prinfo(f"Invalid input, try again. Valid inputs: {consoleIndex}, {currentHaxID1index}")
+					continue
+
+				elif choice == currentHaxID1index:
+					consoleIndex = currentHaxID1index
+					hackedID1 = dirname
+					break
+
+				elif choice == consoleIndex:
+					fs.rename(fullpath, ID0 + "/" + hackedID1)
+					break
 
 		hackedID1Path = ID0 + "/" + hackedID1
+		haxState = 1 # Created/Not ready.
+
+		if fs.exists(hackedID1Path + "/extdata/" + trigger):
+			triggerFilePath = hackedID1Path + "/extdata/" + trigger
+			haxState = 3 # Injected.
+		elif sanity():
+			haxState = 2 # Ready!
 
 if ID1Count != 1:
 	prbad(f"Error 12: You don't have 1 ID1 in your Nintendo 3DS folder, you have {ID1Count}!")
@@ -966,44 +1004,55 @@ if ID1Count != 1:
 clearScreen()
 print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
 print(f"Using {consoleNames[consoleIndex]}")
+print()
+print(f"Current MSET9 state: {haxStates[haxState]}")
 
 print("\n-- Please type in a number then hit return --\n")
 
 print("↓ Input one of these numbers!")
 print("1. Create MSET9 ID1")
-print("2. Perform sanity checks")
-print("3. Inject MSET9 trigger")
-print("4. Remove MSET9")
+
+if haxState > 0:
+	# Not ready (1) - Check for problems
+	# Ready (2) - Inject
+	# Injected (3) - Remove inject
+	option2label = {
+		1: "Check for problems",
+		2: "Inject MSET9 trigger",
+		3: "Remove MSET9 trigger"
+	}
+
+	print(f"2. {option2label[haxState]}")
+	print("3. Remove MSET9")
+
 print("0. Exit")
 
+
 while 1:
-	try:
-		optSelect = int(input(">>> "))
-	except KeyboardInterrupt:
-		optSelect = 0 # exit on Ctrl+C
-		print()
-	except:
-		optSelect = 255
+	optSelect = getInput(maximum=4, minimum=0)
 
 	fs.reload() # (?)
 
-	if optSelect == 1:
+	if optSelect <= 0:
+		break
+
+	elif optSelect == 1:
 		createHaxID1()
+
 	elif optSelect == 2:
-		sanity()
-		exitOnEnter()
-	elif optSelect == 3:
-		sanity()
+		if haxState < 1:
+			prbad("Can't do that now! Please create the MSET9 ID1 first!")
+			continue
+		if haxState == 1:
+			sanityReport()
+
 		injection()
 		exitOnEnter()
-	elif optSelect == 4:
+
+	elif optSelect == 3:
 		remove()
 		remove_extra() # (?)
 		exitOnEnter(remount=True)
-	elif sysModelVerSelect == 0 or "exit":
-		break
-	else:
-		prinfo("Invalid input, try again. Valid inputs: 1, 2, 3, 4, 0")
 
 cleanup(remount=True)
 prgood("Goodbye!")
