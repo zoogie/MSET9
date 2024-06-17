@@ -544,7 +544,9 @@ else:
 
 
 	scriptroot = os.path.dirname(thisfile)
-	if os.stat(scriptroot).st_dev == os.stat("/").st_dev:
+	# I hate python ternary operator i hate python ternary operator
+	systemroot = os.environ["SYSTEMDRIVE"] if osver == "Windows" else "/"
+	if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
 		prbad("Error 01: Script is not running on your SD card!")
 		prinfo(f"Current location: {scriptroot}")
 		exitOnEnter()
@@ -555,12 +557,14 @@ else:
 			root = os.path.dirname(root)
 
 		try:
-			for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/"]:
+			for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "mset9.bat", "mset9.command"]:
 				shutil.move(os.path.join(scriptroot, f), os.path.join(root, f))
-		except FileNotFoundError as e:
-			prbad("Error 08: One or more files are missing!")
-			prinfo("Please re-extract the MSET9 zip file to the root of your SD card, overwriting any existing files when prompted.")
-			exitOnEnter()
+		except FileNotFoundError:
+			# prbad("Error 08: One or more files are missing!")
+			# prinfo("Please re-extract the MSET9 zip file to the root of your SD card, overwriting any existing files when prompted.")
+			# exitOnEnter()
+			pass
+			# The sanity checks will deal with that. I just don't want the exception to terminate the script.
 
 		scriptroot = root
 
