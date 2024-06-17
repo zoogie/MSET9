@@ -545,7 +545,7 @@ else:
 
 	scriptroot = os.path.dirname(thisfile)
 	# I hate python ternary operator i hate python ternary operator
-	systemroot = os.environ["SYSTEMDRIVE"] if osver == "Windows" else "/"
+	systemroot = os.environ["SYSTEMDRIVE"] if osver == "Windows" else "/" # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
 	if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
 		prbad("Error 01: Script is not running on your SD card!")
 		prinfo(f"Current location: {scriptroot}")
@@ -556,16 +556,23 @@ else:
 		while not os.path.ismount(root) and root != os.path.dirname(root):
 			root = os.path.dirname(root)
 
-		try:
-			for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "mset9.bat", "mset9.command"]:
+		for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "mset9.bat", "mset9.command", "_INSTRUCTIONS.txt", "errors.txt"]:
+			try:
 				shutil.move(os.path.join(scriptroot, f), os.path.join(root, f))
-		except FileNotFoundError:
-			# prbad("Error 08: One or more files are missing!")
-			# prinfo("Please re-extract the MSET9 zip file to the root of your SD card, overwriting any existing files when prompted.")
-			# exitOnEnter()
-			pass
-			# The sanity checks will deal with that. I just don't want the exception to terminate the script.
+			except FileNotFoundError:
+				pass # The sanity checks will deal with that. I just don't want the exception to terminate the script.
 
+		with open(os.path.join(scriptroot, "Note from MSET9.txt"), "w") as f:
+			f.write("Hey!\n")
+			f.write("All the MSET9 files have been moved to the root of your SD card.\n\n")
+
+			f.write("- What is the 'root of my SD card' ...?\n")
+			f.write("The root is 'not inside any folder'.\n")
+			f.write("This is where you can see your 'Nintendo 3DS' folder. (It is not inside the Nintendo 3DS folder itself!)\n")
+			f.write("Reference image: https://3ds.hacks.guide/images/screenshots/onboarding/sdroot.png\n\n")
+
+			f.write(f"At the time of writing, the root of your SD card is at: '{root}' Check it out!\n")
+			f.close()
 		scriptroot = root
 
 	fs = OSFS(scriptroot)
@@ -713,7 +720,7 @@ def createHaxID1():
 	print("This is perfectly normal, and if everything goes right. it will re-appear")
 	print("at the end of the process.")
 	print()
-	print("In any case, you are free to make a backup of your SD card's contents.")
+	print("In any case, it is highly recommended to make a backup of your SD card's contents to a folder on your PC.")
 	print("(Especially the 'Nintendo 3DS' folder.)")
 	print()
 
@@ -1021,7 +1028,7 @@ if haxState > 0:
 	# Ready (2) - Inject
 	# Injected (3) - Remove inject
 	option2label = {
-		1: "Check for problems",
+		1: "Perform sanity checks",
 		2: "Inject MSET9 trigger",
 		3: "Remove MSET9 trigger"
 	}
