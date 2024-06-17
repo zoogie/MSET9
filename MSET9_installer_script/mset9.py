@@ -566,13 +566,15 @@ else:
 			f.write("Hey!\n")
 			f.write("All the MSET9 files have been moved to the root of your SD card.\n\n")
 
-			f.write("- What is the 'root of my SD card' ...?\n")
+			f.write("\"What is the 'root of my SD card'...?\"\n")
 			f.write("The root is 'not inside any folder'.\n")
-			f.write("This is where you can see your 'Nintendo 3DS' folder. (It is not inside the Nintendo 3DS folder itself!)\n")
+			f.write("This is where you can see your 'Nintendo 3DS' folder. (It is not inside the Nintendo 3DS folder itself!)\n\n")
+
 			f.write("Reference image: https://3ds.hacks.guide/images/screenshots/onboarding/sdroot.png\n\n")
 
-			f.write(f"At the time of writing, the root of your SD card is at: '{root}' Check it out!\n")
+			f.write(f"At the time of writing, the root of your SD card is at: '{root}'. Check it out!\n")
 			f.close()
+
 		scriptroot = root
 
 	fs = OSFS(scriptroot)
@@ -584,7 +586,10 @@ def clearScreen():
 		os.system("clear")
 
 # -1: Cancelled
-def getInput(maximum, minimum=1):
+def getInput(options):
+	if type(options) == range:
+		options = [*options, (options[-1] + 1)]
+
 	while 1:
 		try:
 			opt = int(input(">>> "))
@@ -593,12 +598,10 @@ def getInput(maximum, minimum=1):
 		except EOFError:
 			return -1
 		except ValueError:
-			opt = 255
+			opt = 0xFFFFFFFF
 
-		if opt > maximum or opt < minimum:
-			# prbad(f"Invalid input, try again. Valid inputs: {*range(minimum, maximum)}") :v
-			inputs = ', '.join(str(i) for i in range(minimum, maximum + 1))
-			prbad(f"Invalid input, try again. Valid inputs: {inputs}")
+		if opt not in options:
+			prbad(f"Invalid input, try again. Valid inputs: {str.join(', ', (str(i) for i in options))}")
 			continue
 
 		return opt
@@ -660,7 +663,7 @@ encodedID1s = {
 	4: "FFFFFFFA119907488546696508A10122054B984768465946C0AA171C4346034CA047B84700900A08459E050881CC0408730064006D00630000900A0862003900"
 }
 
-consoleIndex = getInput(maximum=4)
+consoleIndex = getInput(range(1, 4))
 if consoleIndex < 0:
 	print()
 	prgood("Goodbye!")
@@ -731,7 +734,7 @@ def createHaxID1():
 	print("Input '1' again to confirm.")
 	print("Input '2' to cancel.")
 	time.sleep(3)
-	if getInput(maximum=2) != 1:
+	if getInput(range(1, 2)) != 1:
 		print()
 		prinfo("Cancelled.")
 		exitOnEnter(remount=True)
@@ -739,7 +742,7 @@ def createHaxID1():
 
 	hackedID1Path = ID0 + "/" + hackedID1
 
-	if realID1BackupTag not in realID1Path:
+	if not realID1Path.endswith(realID1BackupTag):
 		prinfo("Backing up original ID1...")
 		fs.rename(realID1Path, realID1Path + realID1BackupTag)
 
@@ -843,7 +846,7 @@ def remove():
 		print()
 		prinfo("Enter '1' to only remove the MSET9 trigger.")
 		prinfo("Enter '2' to remove the MSET9 ID1 entirely.")
-		resp = getInput(2)
+		resp = getInput(range(1, 2))
 		if resp < 0:
 			return
 
@@ -857,7 +860,7 @@ def remove():
 		prinfo("Deleting hacked ID1...")
 		fs.rmtree(hackedID1Path)
 
-	if fs.exists(realID1Path) and realID1BackupTag in realID1Path:
+	if fs.exists(realID1Path) and realID1Path.endswith(realID1BackupTag):
 		prinfo("Renaming original ID1...")
 		fs.rename(realID1Path, ID0 + "/" + ID1[:32])
 		ID1 = ID1[:32]
@@ -950,7 +953,7 @@ for dirname in fs.listdir(ID0):
 		prinfo(f"Found file in ID0 folder? '{dirname}'")
 		continue
 
-	if is3DSID(dirname[:32]):
+	if is3DSID(dirname) or (dirname[32:] == realID1BackupTag and is3DSID(dirname[:32])):
 		prinfo(f"Detected ID1: {dirname}")
 		ID1 = dirname
 		realID1Path = ID0 + "/" + ID1
@@ -965,7 +968,7 @@ for dirname in fs.listdir(ID0):
 				break
 
 		if currentHaxID1index == 0 or (hackedID1Path and fs.exists(hackedID1Path)): # shouldn't happen
-			prbad("Unrecognized/duplicate hax ID1 in ID0 folder, removing!")
+			prbad("Unrecognized/duplicate hacked ID1 in ID0 folder, removing!")
 			fs.rmtree(fullpath)
 		elif currentHaxID1index != consoleIndex:
 			prbad("Error 03: Don't change console model/version in the middle of MSET9!")
@@ -974,29 +977,21 @@ for dirname in fs.listdir(ID0):
 			print()
 			print("Please re-enter the number for your console model and version.")
 
-			while True:
-				try:
-					choice = int(input(">>> "))
-				except KeyboardInterrupt:
-					prinfo("Cancelled.")
-					hackedID1Path = fullpath
-					remove()
-					exitOnEnter()
-				except ValueError:
-					choice = 255
+			choice = getInput([consoleIndex, currentHaxID1index])
+			if choice < 0:
+				prinfo("Cancelled.")
+				hackedID1Path = fullpath
+				remove()
+				exitOnEnter()
 
-				if choice != consoleIndex and choice != currentHaxID1index:
-					prinfo(f"Invalid input, try again. Valid inputs: {consoleIndex}, {currentHaxID1index}")
-					continue
+			elif choice == currentHaxID1index:
+				consoleIndex = currentHaxID1index
+				hackedID1 = dirname
+				break
 
-				elif choice == currentHaxID1index:
-					consoleIndex = currentHaxID1index
-					hackedID1 = dirname
-					break
-
-				elif choice == consoleIndex:
-					fs.rename(fullpath, ID0 + "/" + hackedID1)
-					break
+			elif choice == consoleIndex:
+				fs.rename(fullpath, ID0 + "/" + hackedID1)
+				break
 
 		hackedID1Path = ID0 + "/" + hackedID1
 		haxState = 1 # Created/Not ready.
@@ -1040,11 +1035,11 @@ print("0. Exit")
 
 
 while 1:
-	optSelect = getInput(maximum=4, minimum=0)
+	optSelect = getInput(range(0, 3))
 
 	fs.reload() # (?)
 
-	if optSelect <= 0:
+	if optSelect < 1:
 		break
 
 	elif optSelect == 1:
@@ -1054,7 +1049,7 @@ while 1:
 		if haxState < 1:
 			prbad("Can't do that now! Please create the MSET9 ID1 first!")
 			continue
-		if haxState == 1:
+		elif haxState == 1:
 			sanityReport()
 
 		injection()
