@@ -559,7 +559,7 @@ else:
 		for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "mset9.bat", "mset9.command", "_INSTRUCTIONS.txt", "errors.txt"]:
 			try:
 				shutil.move(os.path.join(scriptroot, f), os.path.join(root, f))
-			except FileNotFoundError:
+			except:
 				pass # The sanity checks will deal with that. I just don't want the exception to terminate the script.
 
 		with open(os.path.join(scriptroot, "Note from MSET9.txt"), "w") as f:
@@ -1012,6 +1012,7 @@ print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
 print(f"Using {consoleNames[consoleIndex]}")
 print()
 print(f"Current MSET9 state: {haxStates[haxState]}")
+fs.print_root();
 
 print("\n-- Please type in a number then hit return --\n")
 
