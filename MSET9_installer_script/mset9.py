@@ -671,7 +671,7 @@ if consoleIndex < 0:
 
 ID0, ID0Count, ID1, ID1Count = "", 0, "", 0
 
-haxStates = ["\033[30;1m ID1 not created \033[0m", "\033[33;1m Not ready to inject \033[0m", "\033[32m Ready to inject \033[0m", "\033[32;1m Injected \033[0m"]
+haxStates = ["\033[30;1mID1 not created\033[0m", "\033[33;1mNot ready to inject\033[0m", "\033[32mReady to inject\033[0m", "\033[32;1mInjected\033[0m"]
 haxState = 0
 
 realID1Path = ""
@@ -746,14 +746,28 @@ def createHaxID1():
 		prinfo("Backing up original ID1...")
 		fs.rename(realID1Path, realID1Path + realID1BackupTag)
 
-	prinfo("Creating hacked ID1...")
-	fs.mkdir(hackedID1Path)
-	#fs.mkdir(hackedID1Path + "/extdata")
-	fs.mkdir(hackedID1Path + "/dbs")
-	fs.open (hackedID1Path + "/dbs/title.db", "w").close()
-	fs.open (hackedID1Path + "/dbs/import.db", "w").close()
+	try:
+		prinfo("Creating hacked ID1...")
+		fs.mkdir(hackedID1Path)
+		#fs.mkdir(hackedID1Path + "/extdata")
+		prinfo("Creating dummy databases...")
+		fs.mkdir(hackedID1Path + "/dbs")
+		fs.open (hackedID1Path + "/dbs/title.db", "w").close()
+		fs.open (hackedID1Path + "/dbs/import.db", "w").close()
+	except Exception as exc:
+		if isinstance(exc, OSError) and osver == "Windows" and osver.winerror == 234: # WinError 234 my love
+			prbad("Error 13: Locale settings are broken!")
+			prinfo("Consult https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
+			prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
 
-	prgood("Created hacked ID1.")
+		# Add linux errno 22 here?
+		else:
+			prbad("An unknown error occured!")
+			prbad(f"Error details: {str(exc)}")
+			prinfo("Join Nintendo Homebrew on Discord for help: https://discord.gg/nintendohomebrew")
+	else:
+		prgood("Created hacked ID1.")
+
 	exitOnEnter()
 
 titleDatabasesGood = False
