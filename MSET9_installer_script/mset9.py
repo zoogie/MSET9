@@ -546,7 +546,6 @@ else:
 	scriptroot = os.path.dirname(thisfile)
 	# I hate python ternary operator i hate python ternary operator
 	systemroot = os.environ["SYSTEMDRIVE"] if osver == "Windows" else "/" # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
-	# Can't stat / on Windows or else we get the current drive
 	if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
 		prbad("Error 01: Script is not running on your SD card!")
 		prinfo(f"Current location: {scriptroot}")
@@ -626,10 +625,10 @@ def writeProtectCheck():
 		prgood("SD card is writeable!")
 
 # Section: SD card free space
-# The 3DS is making the files not us, so let's just make sure we're not at the brim of space left
-if not fs.ensurespace(0x10000): # 64KiB
+# ensure 16MB free space
+if not fs.ensurespace(16 * 1024 * 1024):
 	#prbad(f"Error 06: You need at least 16MB free space on your SD card, you have {(freeSpace / 1000000):.2f} bytes!")
-	prbad("Error 06: SD card is out of free space!")
+	prbad("Error 06: You need at least 16MB free space on your SD card!")
 	prinfo("Please free up some space and try again.")
 	exitOnEnter()
 
