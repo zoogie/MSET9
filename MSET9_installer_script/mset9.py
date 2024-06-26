@@ -788,6 +788,7 @@ def sanityReport():
 		prbad("HOME menu extdata: Missing!")
 		prinfo("Please power on your console with your SD inserted, then check again.")
 		prinfo("If this does not work, power it on while holding L+R+Down+B.")
+		prinfo("If this still does not work, your SD card may need to be reformatted.")
 	else:
 		prgood("HOME menu extdata: OK!")
 
