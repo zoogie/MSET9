@@ -686,28 +686,6 @@ miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,t
 trigger = "002F003A.txt"  # all 3ds ":/" in hex format
 triggerFilePath = ""
 
-
-# make a table so we can print regions based on what hex code from the above is found
-regionTable = {
-	0x8F: "USA Region",
-	0x98: "EUR Region",
-	0x82: "JPN Region",
-	0xA1: "CHN Region",
-	0xA9: "KOR Region",
-	0xB1: "TWN Region"
-}				
-
-homeDataPath, miiDataPath, homeHex, miiHex = "", "", 0x0, 0x0
-# def sanity():
-# 	global fs, haxState, RealID1Path, id0, id1, homeDataPath, miiDataPath, homeHex, miiHex
-#
-# 	print()
-# 	prinfo("Performing sanity checks...")
-#
-# 	writeProtectCheck()
-#
-
-
 def createHaxID1():
 	global fs, ID0, hackedID1Path, realID1Path, realID1BackupTag
 
@@ -720,7 +698,7 @@ def createHaxID1():
 	print()
 	print("This process will temporarily reset all your 3DS data.")
 	print("All your applications and themes will disappear.")
-	print("This is perfectly normal, and if everything goes right. it will re-appear")
+	print("This is perfectly normal, and if everything goes right, it will re-appear")
 	print("at the end of the process.")
 	print()
 	print("In any case, it is highly recommended to make a backup of your SD card's contents to a folder on your PC.")
@@ -756,7 +734,7 @@ def createHaxID1():
 		fs.open (hackedID1Path + "/dbs/import.db", "w").close()
 	except Exception as exc:
 		if isinstance(exc, OSError) and osver == "Windows" and osver.winerror == 234: # WinError 234 my love
-			prbad("Error 13: Locale settings are broken!")
+			prbad("Error 18: Windows locale settings are broken!")
 			prinfo("Consult https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
 			prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
 
@@ -778,9 +756,13 @@ def sanity():
 	global fs, hackedID1Path, titleDatabasesGood, menuExtdataGood, miiExtdataGood
 
 	prinfo("Checking databases...")
-	checkTitledb = softcheck(hackedID1Path + "/dbs/title.db", 0x31E400, 0, 1)
-	checkImportdb = softcheck(hackedID1Path + "/dbs/import.db", 0x31E400, 0, 1)
+	checkTitledb  = softcheck(hackedID1Path + "/dbs/title.db",  0x31E400)
+	checkImportdb = softcheck(hackedID1Path + "/dbs/import.db", 0x31E400)
 	titleDatabasesGood = not (checkTitledb or checkImportdb)
+	if not titleDatabasesGood:
+		# Stub them both. I'm not sure how the console acts if title.db is fine but not import. Someone had that happen, once
+		fs.open(hackedID1Path + "/dbs/title.db",  "w").close()
+		fs.open(hackedID1Path + "/dbs/import.db", "w").close()
 	
 	# if fs.exists(hackedID1Path + "/extdata/" + trigger):
 	# 	prinfo("Removing stale trigger...")
@@ -882,21 +864,21 @@ def remove():
 
 	prgood("Successfully removed MSET9!")
 
-def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
+def softcheck(keyfile, expectedSize = None, crc32 = None):
 	global fs
 	filename = keyfile.rsplit("/")[-1]
 
 	if not fs.exists(keyfile):
 		prbad(f"{filename} does not exist on SD card!")
-		return retval
+		return 1
 
 	fileSize = fs.getsize(keyfile)
 	if not fileSize:
 		prbad(f"{filename} is an empty file!")
-		return retval
+		return 1
 	elif expectedSize and fileSize != expectedSize:
 		prbad(f"{filename} is size {fileSize:,} bytes, not expected {expectedSize:,} bytes")
-		return retval
+		return 1
 
 	if crc32:
 		with fs.open(keyfile, "rb") as f:
@@ -904,7 +886,7 @@ def softcheck(keyfile, expectedSize = None, crc32 = None, retval = 0):
 			f.close()
 			if crc32 != checksum:
 				prbad(f"{filename} was not recognized as the correct file")
-				return retval
+				return 1
 
 	prgood(f"{filename} looks good!")
 	return 0
@@ -927,11 +909,11 @@ writeProtectCheck()
 prinfo("Ensuring extracted files exist...")
 
 fileSanity = 0
-fileSanity += softcheck("boot9strap/boot9strap.firm", 0, 0x08129C1F, 1)
-fileSanity += softcheck("boot.firm", retval = 1)
-fileSanity += softcheck("boot.3dsx", retval = 1)
-fileSanity += softcheck("b9", retval = 1)
-fileSanity += softcheck("SafeB9S.bin", retval = 1)
+fileSanity += softcheck("boot9strap/boot9strap.firm", crc32=0x08129C1F)
+fileSanity += softcheck("boot.firm")
+fileSanity += softcheck("boot.3dsx")
+fileSanity += softcheck("b9")
+fileSanity += softcheck("SafeB9S.bin")
 
 if fileSanity > 0:
 	prbad("Error 08: One or more files are missing or malformed!")
