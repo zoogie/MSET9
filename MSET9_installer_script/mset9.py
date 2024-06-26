@@ -671,7 +671,7 @@ if consoleIndex < 0:
 
 ID0, ID0Count, ID1, ID1Count = "", 0, "", 0
 
-haxStates = ["\033[30;1mID1 not created\033[0m", "\033[33;1mNot ready - sanity check failed\033[0m", "\033[32mReady\033[0m", "\033[32;1mInjected\033[0m"]
+haxStates = ["\033[30;1mID1 not created\033[0m", "\033[33;1mNot ready - sanity check failed\033[0m", "\033[32mReady\033[0m", "\033[32;1mInjected\033[0m", "\033[32mRemoved trigger file\033[0m"]
 haxState = 0
 
 realID1Path = ""
@@ -688,11 +688,6 @@ triggerFilePath = ""
 
 def createHaxID1():
 	global fs, ID0, hackedID1Path, realID1Path, realID1BackupTag
-
-	if hackedID1Path and fs.exists(hackedID1Path):
-		prinfo("Hacked ID1 already exists!")
-		# prinfo("Are you looking to do the sanity checks? Enter '2' instead.")
-		return
 
 	print("\033[0;33m=== DISCLAIMER ===\033[0m") # 5;33m? The blinking is awesome but I also don't want to frighten users lol
 	print()
@@ -822,6 +817,7 @@ def injection():
 
 	if fs.exists(triggerFilePath):
 		fs.remove(triggerFilePath)
+		haxState = 4
 		prgood("Removed trigger file.")
 		return
 
@@ -848,6 +844,7 @@ def remove():
 		ID1 = ID1[:32]
 		realID1Path = ID0 + "/" + ID1
 
+	haxState = 0
 	prgood("Successfully removed MSET9!")
 
 def softcheck(keyfile, expectedSize = None, crc32 = None):
@@ -989,65 +986,79 @@ if ID1Count != 1:
 	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
 	exitOnEnter()
 
-clearScreen()
-print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
-print(f"Using {consoleNames[consoleIndex]}")
-print()
-print(f"Current MSET9 state: {haxStates[haxState]}")
-fs.print_root();
+def mainMenu():
+	clearScreen()
+	print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
+	print(f"Using {consoleNames[consoleIndex]}")
+	print()
+	print(f"Current MSET9 state: {haxStates[haxState]}")
+	fs.print_root();
 
-print("\n-- Please type in a number then hit return --\n")
+	print("\n-- Please type in a number then hit return --\n")
 
-print("↓ Input one of these numbers!")
-print("1. Create MSET9 ID1")
+	print("↓ Input one of these numbers!")
+	print("1. Create MSET9 ID1")
 
-if haxState > 0:
-	# Not ready (1) - Check for problems
-	# Ready (2) - Inject
-	# Injected (3) - Remove inject
-	option2label = {
-		1: "Perform sanity checks",
-		2: "Inject MSET9 trigger",
-		3: "Remove MSET9 trigger"
-	}
+	if haxState > 0:
+		# Not ready (1) - Check for problems
+		# Ready (2) - Inject
+		# Injected (3) - Remove inject
+		option2label = {
+			1: "Perform sanity checks",
+			2: "Inject MSET9 trigger",
+			3: "Remove MSET9 trigger",
+			4: "Remove MSET9 trigger"
+		}
 
-	print(f"2. {option2label[haxState]}")
-	if haxState != 3:
-		print("3. Remove MSET9")
+		print(f"2. {option2label[haxState]}")
+		if haxState != 3:
+			print("3. Remove MSET9")
 
-print("0. Exit")
+	print("0. Exit")
 
+	while 1:
+		optSelect = getInput(range(0, 3))
 
-while 1:
-	optSelect = getInput(range(0, 3))
+		fs.reload() # (?)
 
-	fs.reload() # (?)
+		if optSelect <= 0:
+			break
 
-	if optSelect <= 0:
-		break
-
-	elif optSelect == 1:
-		createHaxID1()
-
-	elif optSelect == 2:
-		if haxState <= 0:
-			prbad("Can't do that now! Please create the MSET9 ID1 first!")
-			continue
-		elif haxState == 1:
-			sanityReport()
+		elif optSelect == 1:
+			if haxState > 0:
+				prinfo("Hacked ID1 already exists!")
+				continue
+			createHaxID1()
 			exitOnEnter()
-		else:
-			injection()
 
-	elif optSelect == 3:
-		if haxState == 3:
-			prbad("Can't do that now!")
-			continue
+		elif optSelect == 2:
+			if haxState <= 0:
+				prbad("Can't do that now! Please create the MSET9 ID1 first!")
+				continue
+			elif haxState == 1:
+				sanityReport()
+				exitOnEnter()
+			elif haxState == 2:
+				injection()
+				exitOnEnter()
+			elif haxState == 3:
+				injection()
+				time.sleep(3)
+				return mainMenu()
+			elif haxState == 4:
+				prinfo("Already removed trigger file.")
+				continue
 
-		remove()
-		remove_extra() # (?)
-		exitOnEnter(remount=True)
+		elif optSelect == 3:
+			if haxState == 3:
+				prbad("Can't do that now!")
+				continue
 
+			remove()
+			remove_extra() # (?)
+			exitOnEnter(remount=True)
+
+mainMenu()
 cleanup(remount=True)
 prgood("Goodbye!")
 time.sleep(2)
