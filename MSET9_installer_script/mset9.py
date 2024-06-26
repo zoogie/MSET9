@@ -671,7 +671,7 @@ if consoleIndex < 0:
 
 ID0, ID0Count, ID1, ID1Count = "", 0, "", 0
 
-haxStates = ["\033[30;1mID1 not created\033[0m", "\033[33;1mNot ready to inject\033[0m", "\033[32mReady to inject\033[0m", "\033[32;1mInjected\033[0m"]
+haxStates = ["\033[30;1mID1 not created\033[0m", "\033[33;1mNot ready - sanity check failed\033[0m", "\033[32mReady\033[0m", "\033[32;1mInjected\033[0m"]
 haxState = 0
 
 realID1Path = ""
@@ -815,8 +815,6 @@ def sanityReport():
 
 	print()
 
-	exitOnEnter()
-
 def injection():
 	global fs, haxState, hackedID1Path, trigger
 
@@ -824,7 +822,7 @@ def injection():
 
 	if fs.exists(triggerFilePath):
 		fs.remove(triggerFilePath)
-		prinfo("Removed trigger file.")
+		prgood("Removed trigger file.")
 		return
 
 	prinfo("Injecting trigger file...")
@@ -833,22 +831,10 @@ def injection():
 		f.write("pls be haxxed mister arm9, thx")
 		f.close()
 	prgood("MSET9 successfully injected!")
+	exitOnEnter()
 
 def remove():
 	global fs, ID0, ID1, hackedID1Path, realID1Path, realID1BackupTag
-
-	if haxState == 3:
-		prinfo("MSET9 trigger is still injected!")
-		print()
-		prinfo("Enter '1' to only remove the MSET9 trigger.")
-		prinfo("Enter '2' to remove the MSET9 ID1 entirely.")
-		resp = getInput(range(1, 2))
-		if resp < 0:
-			return
-
-		elif resp == 1:
-			injection()
-			return
 
 	prinfo("Removing MSET9...")
 
@@ -1026,7 +1012,8 @@ if haxState > 0:
 	}
 
 	print(f"2. {option2label[haxState]}")
-	print("3. Remove MSET9")
+	if haxState != 3:
+		print("3. Remove MSET9")
 
 print("0. Exit")
 
@@ -1036,23 +1023,27 @@ while 1:
 
 	fs.reload() # (?)
 
-	if optSelect < 1:
+	if optSelect <= 0:
 		break
 
 	elif optSelect == 1:
 		createHaxID1()
 
 	elif optSelect == 2:
-		if haxState < 1:
+		if haxState <= 0:
 			prbad("Can't do that now! Please create the MSET9 ID1 first!")
 			continue
 		elif haxState == 1:
 			sanityReport()
-
-		injection()
-		exitOnEnter()
+			exitOnEnter()
+		else:
+			injection()
 
 	elif optSelect == 3:
+		if haxState == 3:
+			prbad("Can't do that now!")
+			continue
+
 		remove()
 		remove_extra() # (?)
 		exitOnEnter(remount=True)
