@@ -758,26 +758,18 @@ def sanity():
 		# Stub them both. I'm not sure how the console acts if title.db is fine but not import. Someone had that happen, once
 		fs.open(hackedID1Path + "/dbs/title.db",  "w").close()
 		fs.open(hackedID1Path + "/dbs/import.db", "w").close()
-	
-	# if fs.exists(hackedID1Path + "/extdata/" + trigger):
-	# 	prinfo("Removing stale trigger...")
-	# 	fs.remove(hackedID1Path + "/extdata/" + trigger)
-	
-	extdataRoot = hackedID1Path + "/extdata/00000000"
 
 	prinfo("Checking for HOME Menu extdata...")
 	for i in homeMenuExtdata:
-		extdataRegionCheck = extdataRoot + f"/{i:08X}"
+		extdataRegionCheck = hackedID1Path + f"/extdata/00000000/{i:08X}"
 		if fs.exists(extdataRegionCheck):
-			# prgood(f"Detected {regionTable[i]} HOME Menu data!")
 			menuExtdataGood = True
 			break
 	
 	prinfo("Checking for Mii Maker extdata...")
 	for i in miiMakerExtdata:
-		extdataRegionCheck = extdataRoot + f"/{i:08X}"
+		extdataRegionCheck = hackedID1Path + f"/extdata/00000000/{i:08X}"
 		if fs.exists(extdataRegionCheck):
-			# prgood("Found Mii Maker data!")
 			miiExtdataGood = True
 			break
 
@@ -967,14 +959,12 @@ for dirname in fs.listdir(ID0):
 			elif choice == currentHaxID1index:
 				consoleIndex = currentHaxID1index
 				hackedID1 = dirname
-				break
 
 			elif choice == consoleIndex:
 				fs.rename(fullpath, ID0 + "/" + hackedID1)
-				break
 
 		hackedID1Path = ID0 + "/" + hackedID1
-		haxState = 1 # Created/Not ready.
+		haxState = 1 # Not ready.
 
 		if fs.exists(hackedID1Path + "/extdata/" + trigger):
 			triggerFilePath = hackedID1Path + "/extdata/" + trigger
@@ -1051,6 +1041,9 @@ def mainMenu():
 				continue
 
 		elif optSelect == 3:
+			if haxState <= 0:
+				prinfo("Nothing to do.")
+				continue
 			if haxState == 3:
 				prbad("Can't do that now!")
 				continue
