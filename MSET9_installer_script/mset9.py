@@ -70,7 +70,45 @@ def remove_extra():
 
 osver = platform.system()
 thisfile = os.path.abspath(__file__)
+scriptroot = os.path.dirname(thisfile)
 systmp = None
+
+# I hate python ternary operator i hate python ternary operator
+systemroot = os.environ["SYSTEMDRIVE"] if osver == "Windows" else "/" # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
+if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
+	prbad("Error 01: Script is not running on your SD card!")
+	prinfo(f"Current location: {scriptroot}")
+	exitOnEnter()
+
+def dig_for_root():
+	global thisfile, scriptroot
+
+	if not os.path.ismount(scriptroot):
+		root = scriptroot
+		while not os.path.ismount(root) and root != os.path.dirname(root):
+			root = os.path.dirname(root)
+
+		for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "mset9.bat", "mset9.command", "_INSTRUCTIONS.txt", "errors.txt"]:
+			try:
+				shutil.move(os.path.join(scriptroot, f), os.path.join(root, f))
+			except:
+				pass # The sanity checks will deal with that. I just don't want the exception to terminate the script.
+
+		with open(os.path.join(scriptroot, "Note from MSET9.txt"), "w") as f:
+			f.write("Hey!\n")
+			f.write("All the MSET9 files have been moved to the root of your SD card.\n\n")
+
+			f.write("\"What is the 'root of my SD card'...?\"\n")
+			f.write("The root is 'not inside any folder'.\n")
+			f.write("This is where you can see your 'Nintendo 3DS' folder. (It is not inside the Nintendo 3DS folder itself!)\n\n")
+
+			f.write("Reference image: https://3ds.hacks.guide/images/screenshots/onboarding/sdroot.png\n\n")
+
+			f.write(f"At the time of writing, the root of your SD card is at: '{root}'. Check it out!\n")
+			f.close()
+
+		scriptroot = root
+		thisfile = os.path.join(scriptroot, "mset9.py")
 
 if osver == "Darwin":
 	# ======== macOS / iOS? ========
@@ -100,13 +138,15 @@ if osver == "Darwin":
 		return subprocess.run(["diskutil", *command, dev], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
 
 	if len(sys.argv) < 2:
-		if not thisfile.startswith("/Volumes/"):
+		if not scriptroot.startswith("/Volumes/"):
 			prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
 			# should we add some macos specific message?
 			exitOnEnter()
+
+		dig_for_root()
 		prinfo("Resolving device...")
 		device = None
-		devid = os.stat(thisfile).st_dev
+		devid = os.stat(scriptroot).st_dev
 		for devname in os.listdir("/dev"):
 			if not devname.startswith("disk"):
 				continue
@@ -534,41 +574,7 @@ else:
 		def print_root(self):
 			prinfo(f"Current dir: {self.root}")
 
-
-	scriptroot = os.path.dirname(thisfile)
-	# I hate python ternary operator i hate python ternary operator
-	systemroot = os.environ["SYSTEMDRIVE"] if osver == "Windows" else "/" # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
-	if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
-		prbad("Error 01: Script is not running on your SD card!")
-		prinfo(f"Current location: {scriptroot}")
-		exitOnEnter()
-
-	if not os.path.ismount(scriptroot):
-		root = scriptroot
-		while not os.path.ismount(root) and root != os.path.dirname(root):
-			root = os.path.dirname(root)
-
-		for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "mset9.bat", "mset9.command", "_INSTRUCTIONS.txt", "errors.txt"]:
-			try:
-				shutil.move(os.path.join(scriptroot, f), os.path.join(root, f))
-			except:
-				pass # The sanity checks will deal with that. I just don't want the exception to terminate the script.
-
-		with open(os.path.join(scriptroot, "Note from MSET9.txt"), "w") as f:
-			f.write("Hey!\n")
-			f.write("All the MSET9 files have been moved to the root of your SD card.\n\n")
-
-			f.write("\"What is the 'root of my SD card'...?\"\n")
-			f.write("The root is 'not inside any folder'.\n")
-			f.write("This is where you can see your 'Nintendo 3DS' folder. (It is not inside the Nintendo 3DS folder itself!)\n\n")
-
-			f.write("Reference image: https://3ds.hacks.guide/images/screenshots/onboarding/sdroot.png\n\n")
-
-			f.write(f"At the time of writing, the root of your SD card is at: '{root}'. Check it out!\n")
-			f.close()
-
-		scriptroot = root
-
+	dig_for_root()
 	fs = OSFS(scriptroot)
 
 def clearScreen():
