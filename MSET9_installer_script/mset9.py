@@ -50,9 +50,6 @@ class FSWrapper(metaclass=abc.ABCMeta):
 	def copytree(self, src, dst):
 		pass
 	@abc.abstractmethod
-	def walk(self, path, topdown=False):
-		pass
-	@abc.abstractmethod
 	def is_writable(self):
 		pass
 	@abc.abstractmethod
@@ -427,9 +424,6 @@ if osver == "Darwin":
 			self.fs.copydir(src, dst, create=True)
 		def listdir(self, path):
 			return self.fs.listdir(path)
-		def walk(self, path, topdown=False):  # topdown is ignored
-			for dir_path, dirs, files in self.fs.walk(path):
-				yield dir_path, list(map(lambda x: x.name, dirs)), list(map(lambda x: x.name, files))
 		def is_writable(self):
 			try:
 				with self.open("test.txt", "w") as f:
@@ -517,8 +511,6 @@ else:
 			shutil.copytree(self.abs(src), self.abs(dst))
 		def listdir(self, path):
 			return os.listdir(path)
-		def walk(self, path, topdown=False):
-			return os.walk(self.abs(path), topdown=topdown)
 		def is_writable(self):
 			writable = os.access(self.root, os.W_OK)
 			try: # Bodge for windows
@@ -594,8 +586,10 @@ def getInput(options):
 		try:
 			opt = int(input(">>> "))
 		except KeyboardInterrupt:
+			print()
 			return -1
 		except EOFError:
+			print()
 			return -1
 		except ValueError:
 			opt = 0xFFFFFFFF
@@ -665,7 +659,6 @@ encodedID1s = {
 
 consoleIndex = getInput(range(1, 4))
 if consoleIndex < 0:
-	print()
 	prgood("Goodbye!")
 	exitOnEnter(remount=True)
 
@@ -680,8 +673,7 @@ realID1BackupTag = "_user-id1"
 hackedID1 = bytes.fromhex(encodedID1s[consoleIndex]).decode("utf-16le")  # ID1 - arm injected payload in readable f
 hackedID1Path = ""
 
-extdataRoot = ""
-homeMenuExtdata = [0x8F, 0x98, 0x82, 0xA1, 0xA9, 0xB1]  # us,eu,jp,ch,kr,tw
+homeMenuExtdata = [0x8F,  0x98,  0x82,  0xA1,  0xA9,  0xB1]  # us,eu,jp,ch,kr,tw
 miiMakerExtdata = [0x217, 0x227, 0x207, 0x267, 0x277, 0x287]  # us,eu,jp,ch,kr,tw
 trigger = "002F003A.txt"  # all 3ds ":/" in hex format
 triggerFilePath = ""
@@ -988,59 +980,50 @@ def mainMenu():
 	print("\n-- Please type in a number then hit return --\n")
 
 	print("↓ Input one of these numbers!")
-	print("1. Create MSET9 ID1")
 
-	if haxState > 0:
-		# Not ready (1) - Check for problems
-		# Ready (2) - Inject
-		# Injected (3) - Remove inject
-		option2label = {
-			1: "Perform sanity checks",
-			2: "Inject MSET9 trigger",
-			3: "Remove MSET9 trigger",
-			4: "Remove MSET9 trigger"
-		}
+	# Not ready (1) - Check for problems
+	# Ready (2) - Inject
+	# Injected (3) - Remove inject
+	optionlabel = {
+		0: "Create MSET9 ID1",
+		1: "Perform sanity checks",
+		2: "Inject MSET9 trigger",
+		3: "Remove MSET9 trigger",
+	}
 
-		print(f"2. {option2label[haxState]}")
-		if haxState != 3:
-			print("3. Remove MSET9")
+	if haxState != 4:
+		print(f"{haxState + 1}. {optionlabel[haxState]}")
+	if haxState > 0 and haxState != 3:
+		print("5. Remove MSET9")
 
 	print("0. Exit")
 
 	while 1:
-		optSelect = getInput(range(0, 3))
+		optSelect = getInput([haxState + 1, 5, 0])
 
 		fs.reload() # (?)
 
 		if optSelect <= 0:
 			break
 
-		elif optSelect == 1:
-			if haxState > 0:
-				prinfo("Hacked ID1 already exists!")
-				continue
+		elif optSelect == 1: # Create hacked ID1
 			createHaxID1()
 			exitOnEnter()
 
-		elif optSelect == 2:
-			if haxState <= 0:
-				prbad("Can't do that now! Please create the MSET9 ID1 first!")
-				continue
-			elif haxState == 1:
-				sanityReport()
-				exitOnEnter()
-			elif haxState == 2:
-				injection()
-				exitOnEnter()
-			elif haxState == 3:
-				injection()
-				time.sleep(3)
-				return mainMenu()
-			elif haxState == 4:
-				prinfo("Already removed trigger file.")
-				continue
+		elif optSelect == 2: # Perform sanity checks
+			sanityReport()
+			exitOnEnter()
 
-		elif optSelect == 3:
+		elif optSelect == 3: # Inject trigger file
+			injection()
+			exitOnEnter()
+
+		elif optSelect == 4: # Remove trigger file
+			injection()
+			time.sleep(3)
+			return mainMenu()
+
+		elif optSelect == 5: # Remove MSET9
 			if haxState <= 0:
 				prinfo("Nothing to do.")
 				continue
