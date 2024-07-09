@@ -823,11 +823,15 @@ def injection():
 	exitOnEnter()
 
 def remove():
-	global fs, ID0, ID1, hackedID1Path, realID1Path, realID1BackupTag
+	global fs, ID0, ID1, hackedID1Path, realID1Path, realID1BackupTag, titleDatabasesGood
 
 	prinfo("Removing MSET9...")
 
 	if hackedID1Path and fs.exists(hackedID1Path):
+		if not fs.exists(realID1Path + "/dbs") and titleDatabasesGood:
+			prinfo("Moving databases to user ID1...")
+			fs.rename(hackedID1Path + "/dbs", realID1Path + "/dbs")
+
 		prinfo("Deleting hacked ID1...")
 		fs.rmtree(hackedID1Path)
 
