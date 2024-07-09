@@ -570,7 +570,7 @@ else:
 			try:
 				os.chdir(self.root)
 			except Exception:
-				prbad("Error 09: Couldn't reapply working directory, is SD card reinserted?")
+				prbad("Error 08: Couldn't reapply working directory, is SD card reinserted?")
 				exitOnEnter()
 		def print_root(self):
 			prinfo(f"Current dir: {self.root}")
@@ -818,6 +818,7 @@ def injection():
 		#f.write("not so useless FAT-fs null deref")
 		f.write("pls be haxxed mister arm9, thx")
 		f.close()
+
 	prgood("MSET9 successfully injected!")
 	exitOnEnter()
 
@@ -891,7 +892,7 @@ fileSanity += softcheck("b9")
 fileSanity += softcheck("SafeB9S.bin")
 
 if fileSanity > 0:
-	prbad("Error 08: One or more files are missing or malformed!")
+	prbad("Error 07: One or more files are missing or malformed!")
 	prinfo("Please re-extract the MSET9 zip file, overwriting any existing files when prompted.")
 	exitOnEnter()
 
@@ -913,7 +914,7 @@ for dirname in fs.listdir("Nintendo 3DS/"):
 	ID0Count += 1
 
 if ID0Count != 1:
-	prbad(f"Error 07: You don't have 1 ID0 in your Nintendo 3DS folder, you have {ID0Count}!")
+	prbad(f"Error 04: You don't have 1 ID0 in your Nintendo 3DS folder, you have {ID0Count}!")
 	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
 	exitOnEnter()
 
@@ -972,7 +973,7 @@ for dirname in fs.listdir(ID0):
 			haxState = 2 # Ready!
 
 if ID1Count != 1:
-	prbad(f"Error 12: You don't have 1 ID1 in your Nintendo 3DS folder, you have {ID1Count}!")
+	prbad(f"Error 05: You don't have 1 ID1 in your Nintendo 3DS folder, you have {ID1Count}!")
 	prinfo("Consult: https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for help!")
 	exitOnEnter()
 
