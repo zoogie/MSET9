@@ -81,6 +81,7 @@ if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
 	exitOnEnter()
 
 def dig_for_root():
+	import shutil
 	global thisfile, scriptroot
 
 	if not os.path.ismount(scriptroot):
@@ -676,7 +677,7 @@ haxState = 0
 realID1Path = ""
 realID1BackupTag = "_user-id1"
 
-hackedID1 = bytes.fromhex(encodedID1s[consoleIndex]).decode("utf-16le")  # ID1 - arm injected payload in readable f
+hackedID1 = bytes.fromhex(encodedID1s[consoleIndex]).decode("utf-16le")  # ID1 - arm injected payload in readable format
 hackedID1Path = ""
 
 homeMenuExtdata = [0x8F,  0x98,  0x82,  0xA1,  0xA9,  0xB1]  # us,eu,jp,ch,kr,tw
@@ -710,35 +711,36 @@ def createHaxID1():
 		prinfo("Cancelled.")
 		exitOnEnter(remount=True)
 
-
 	hackedID1Path = ID0 + "/" + hackedID1
-
-	if not realID1Path.endswith(realID1BackupTag):
-		prinfo("Backing up original ID1...")
-		fs.rename(realID1Path, realID1Path + realID1BackupTag)
 
 	try:
 		prinfo("Creating hacked ID1...")
 		fs.mkdir(hackedID1Path)
-		#fs.mkdir(hackedID1Path + "/extdata")
 		prinfo("Creating dummy databases...")
 		fs.mkdir(hackedID1Path + "/dbs")
 		fs.open (hackedID1Path + "/dbs/title.db", "w").close()
 		fs.open (hackedID1Path + "/dbs/import.db", "w").close()
 	except Exception as exc:
-		if isinstance(exc, OSError) and osver == "Windows" and osver.winerror == 234: # WinError 234 my love
+		if isinstance(exc, OSError) and osver == "Windows" and exc.winerror == 234: # WinError 234 my love
 			prbad("Error 18: Windows locale settings are broken!")
 			prinfo("Consult https://3ds.hacks.guide/troubleshooting#installing-boot9strap-mset9 for instructions.")
 			prinfo("If you need help, join Nintendo Homebrew on Discord: https://discord.gg/nintendohomebrew")
-
-		# Add linux errno 22 here?
+		elif isinstance(exc, OSError) and osver == "Linux" and exc.errno == 22: # Don't want this message to display on Windows if it ever manages to
+			prbad("Failed to create hacked ID1!") # Give this an error number?
+			prbad(f"Error details: {str(exc)}")
+			prinfo("Please unmount your SD card and remount it with the 'utf8' option.") # Should we do this ourself? Like look at macOS
 		else:
 			prbad("An unknown error occured!")
 			prbad(f"Error details: {str(exc)}")
 			prinfo("Join Nintendo Homebrew on Discord for help: https://discord.gg/nintendohomebrew")
-	else:
-		prgood("Created hacked ID1.")
 
+		exitOnEnter()
+
+	if not realID1Path.endswith(realID1BackupTag):
+		prinfo("Backing up original ID1...")
+		fs.rename(realID1Path, realID1Path + realID1BackupTag)
+
+	prgood("Created hacked ID1.")
 	exitOnEnter()
 
 titleDatabasesGood = False
@@ -777,8 +779,7 @@ def sanityReport():
 	if not menuExtdataGood:
 		prbad("HOME menu extdata: Missing!")
 		prinfo("Please power on your console with your SD inserted, then check again.")
-		prinfo("If this does not work, power it on while holding L+R+Down+B.")
-		prinfo("If this still does not work, your SD card may need to be reformatted.")
+		prinfo("If this does not work, your SD card may need to be reformatted.")
 	else:
 		prgood("HOME menu extdata: OK!")
 
