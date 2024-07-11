@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import abc, os, platform, time, binascii
+import abc, sys, os, platform, time, pathlib, binascii
 
 VERSION = "v1.2c"
 
@@ -73,8 +73,7 @@ thisfile = os.path.abspath(__file__)
 scriptroot = os.path.dirname(thisfile)
 systmp = None
 
-# I hate python ternary operator i hate python ternary operator
-systemroot = os.environ["SYSTEMDRIVE"] if osver == "Windows" else "/" # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
+systemroot = pathlib.Path(sys.executable).anchor # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
 if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
 	prbad("Error 01: Script is not running on your SD card!")
 	prinfo(f"Current location: {scriptroot}")
@@ -113,7 +112,6 @@ def dig_for_root():
 
 if osver == "Darwin":
 	# ======== macOS / iOS? ========
-	import sys
 
 	tmpprefix = "mset9-macos-run-"
 
