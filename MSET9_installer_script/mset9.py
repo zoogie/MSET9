@@ -800,10 +800,14 @@ def sanityReport():
 
 	print()
 
-def injection():
+def injection(create=True):
 	global fs, haxState, hackedID1Path, trigger
 
 	triggerFilePath = hackedID1Path + "/extdata/" + trigger
+
+	if not fs.exists(triggerFilePath) ^ create:
+		prbad(f"Trigger file already {'injected' if create else 'removed'}!")
+		return
 
 	if fs.exists(triggerFilePath):
 		fs.remove(triggerFilePath)
@@ -813,7 +817,6 @@ def injection():
 
 	prinfo("Injecting trigger file...")
 	with fs.open(triggerFilePath, 'w') as f:
-		#f.write("not so useless FAT-fs null deref")
 		f.write("pls be haxxed mister arm9, thx")
 		f.close()
 
@@ -966,13 +969,15 @@ for dirname in fs.listdir(ID0):
 				fs.rename(fullpath, ID0 + "/" + hackedID1)
 
 		hackedID1Path = ID0 + "/" + hackedID1
-		haxState = 1 # Not ready.
+		sanityOK = sanity()
 
 		if fs.exists(hackedID1Path + "/extdata/" + trigger):
 			triggerFilePath = hackedID1Path + "/extdata/" + trigger
 			haxState = 3 # Injected.
-		elif sanity():
+		elif sanityOK:
 			haxState = 2 # Ready!
+		else:
+			haxState = 1 # Not ready...
 
 if ID1Count != 1:
 	prbad(f"Error 05: You don't have 1 ID1 in your Nintendo 3DS folder, you have {ID1Count}!")
@@ -1009,7 +1014,7 @@ def mainMenu():
 	print("0. Exit")
 
 	while 1:
-		optSelect = getInput([haxState + 1, 5, 0])
+		optSelect = getInput(range(0, 5))
 
 		fs.reload() # (?)
 
@@ -1017,6 +1022,9 @@ def mainMenu():
 			break
 
 		elif optSelect == 1: # Create hacked ID1
+			if hackedID1Path and fs.exists(hackedID1Path):
+				prinfo("Hacked ID1 already exists.")
+				continue
 			createHaxID1()
 			exitOnEnter()
 
@@ -1025,11 +1033,14 @@ def mainMenu():
 			exitOnEnter()
 
 		elif optSelect == 3: # Inject trigger file
-			injection()
-			exitOnEnter()
+			if haxState == 4:
+				prbad("Can't do that now!")
+				continue
+			injection(create=True)
+			# exitOnEnter() # has it's own
 
 		elif optSelect == 4: # Remove trigger file
-			injection()
+			injection(create=False)
 			time.sleep(3)
 			return mainMenu()
 
