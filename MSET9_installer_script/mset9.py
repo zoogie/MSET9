@@ -748,6 +748,8 @@ miiExtdataGood = False
 def sanity():
 	global fs, hackedID1Path, titleDatabasesGood, menuExtdataGood, miiExtdataGood
 
+	fs.print_root()
+
 	prinfo("Checking databases...")
 	checkTitledb  = softcheck(hackedID1Path + "/dbs/title.db",  0x31E400)
 	checkImportdb = softcheck(hackedID1Path + "/dbs/import.db", 0x31E400)
@@ -998,22 +1000,15 @@ def mainMenu():
 
 	print("↓ Input one of these numbers!")
 
-	# Not ready (1) - Check for problems
-	# Ready (2) - Inject
-	# Injected (3) - Remove inject
-	optionlabel = {
-		0: "Create MSET9 ID1",
-		1: "Perform sanity checks",
-		2: "Inject MSET9 trigger",
-		3: "Remove MSET9 trigger",
-	}
+	print("1. Create MSET9 ID1")
+	print("2. Check MSET9 status")
+	print("3. Inject trigger file")
+	print("4. Remove trigger file")
 
-	if haxState != 4:
-		print(f"{haxState + 1}. {optionlabel[haxState]}")
-	if haxState > 0 and haxState != 3:
+	if haxState != 3:
 		print("5. Remove MSET9")
 
-	print("0. Exit")
+	print("\n0. Exit")
 
 	while 1:
 		optSelect = getInput(range(0, 5))
@@ -1024,24 +1019,29 @@ def mainMenu():
 			break
 
 		elif optSelect == 1: # Create hacked ID1
-			if hackedID1Path and fs.exists(hackedID1Path):
+			if haxState > 0:
 				prinfo("Hacked ID1 already exists.")
 				continue
 			createHaxID1()
 			exitOnEnter()
 
-		elif optSelect == 2: # Perform sanity checks
+		elif optSelect == 2: # Check status
+			if haxState == 0: # MSET9 ID1 not present
+				prbad("Can't do that now!")
+				continue
 			sanityReport()
 			exitOnEnter()
 
 		elif optSelect == 3: # Inject trigger file
-			if haxState == 4:
+			if haxState != 2: # Ready to inject
 				prbad("Can't do that now!")
 				continue
 			injection(create=True)
 			# exitOnEnter() # has it's own
 
 		elif optSelect == 4: # Remove trigger file
+			if haxState < 2:
+				prbad("Can't do that now!")
 			injection(create=False)
 			time.sleep(3)
 			return mainMenu()
