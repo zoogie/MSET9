@@ -992,7 +992,7 @@ def mainMenu():
 	print(f"Using {consoleNames[consoleIndex]}")
 	print()
 	print(f"Current MSET9 state: {haxStates[haxState]}")
-	fs.print_root();
+#	fs.print_root(); # <-- Why did I add a semicolon here
 
 	print("\n-- Please type in a number then hit return --\n")
 
