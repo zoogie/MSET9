@@ -669,7 +669,7 @@ if consoleIndex < 0:
 
 ID0, ID0Count, ID1, ID1Count = "", 0, "", 0
 
-haxStates = ["\033[30;1mID1 not created\033[0m", "\033[33;1mNot ready - sanity check failed\033[0m", "\033[32mReady\033[0m", "\033[32;1mInjected\033[0m", "\033[32mRemoved trigger file\033[0m"]
+haxStates = ["\033[30;1mID1 not created\033[0m", "\033[33;1mNot ready - check MSET9 status for more details\033[0m", "\033[32mReady\033[0m", "\033[32;1mInjected\033[0m", "\033[32mRemoved trigger file\033[0m"]
 haxState = 0
 
 realID1Path = ""
