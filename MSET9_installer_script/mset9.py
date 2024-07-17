@@ -753,6 +753,8 @@ def sanity():
 	checkImportdb = softcheck(hackedID1Path + "/dbs/import.db", 0x31E400)
 	titleDatabasesGood = not (checkTitledb or checkImportdb)
 	if not titleDatabasesGood:
+		if not fs.exists(hackedID1Path + "/dbs"):
+			fs.mkdir(hackedID1Path + "/dbs")
 		# Stub them both. I'm not sure how the console acts if title.db is fine but not import. Someone had that happen, once
 		fs.open(hackedID1Path + "/dbs/title.db",  "w").close()
 		fs.open(hackedID1Path + "/dbs/import.db", "w").close()
