@@ -632,7 +632,7 @@ if not fs.ensurespace(16 * 1024 * 1024):
 	exitOnEnter()
 
 clearScreen()
-print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
+print(f"MSET9 {VERSION} SETUP by zoogie, Aven, DannyAAM and thepikachugamer")
 print("What is your console model and version?")
 print("Old 3DS has two shoulder buttons (L and R)")
 print("New 3DS has four shoulder buttons (L, R, ZL, ZR)")
