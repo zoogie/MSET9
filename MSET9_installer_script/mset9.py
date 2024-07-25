@@ -990,11 +990,10 @@ if ID1Count != 1:
 
 def mainMenu():
 	clearScreen()
-	print(f"MSET9 {VERSION} SETUP by zoogie, Aven and DannyAAM")
+	print(f"MSET9 {VERSION} SETUP by zoogie, Aven, DannyAAM and thepikachugamer")
 	print(f"Using {consoleNames[consoleIndex]}")
 	print()
 	print(f"Current MSET9 state: {haxStates[haxState]}")
-#	fs.print_root(); # <-- Why did I add a semicolon here
 
 	print("\n-- Please type in a number then hit return --\n")
 
