@@ -748,8 +748,6 @@ miiExtdataGood = False
 def sanity():
 	global fs, hackedID1Path, titleDatabasesGood, menuExtdataGood, miiExtdataGood
 
-	fs.print_root()
-
 	prinfo("Checking databases...")
 	checkTitledb  = softcheck(hackedID1Path + "/dbs/title.db",  0x31E400)
 	checkImportdb = softcheck(hackedID1Path + "/dbs/import.db", 0x31E400)
@@ -778,6 +776,8 @@ def sanity():
 	return menuExtdataGood and miiExtdataGood and titleDatabasesGood
 
 def sanityReport():
+	fs.print_root()
+
 	if not menuExtdataGood:
 		prbad("HOME menu extdata: Missing!")
 		prinfo("Please power on your console with your SD inserted, then check again.")
