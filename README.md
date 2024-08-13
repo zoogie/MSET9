@@ -6,6 +6,7 @@
 - TuxSH for [usr2arm9ldr](https://github.com/TuxSH/usr2arm9ldr) and some good advice!
 - ToxicAven for substantial mset9.py improvements!
 - Danny8376 for adding macOS support!
+- thepikachugamer for adding Fresh
 
 [MSET9 in action](https://zoogie.github.io/web/m9/(%20%CD%A1%C2%B0%20%CD%9C%CA%96%20%CD%A1%C2%B0).webm)
 
@@ -21,12 +22,12 @@ While mostly leading to null derefs, in one specific context, process9 jumps dir
 Source: [3Dbrew](https://www.3dbrew.org/wiki/3DS_System_Flaws#Process9)
 
 ## Can I do it?
--- You need a 3ds 11.4-11.17, any region (probably, haven't tested them all)<br>
+-- You need a 3ds 11.4-11.17 any region<br>
 -- A USB to SD reader<br>
--- Windows/MAC/Linux PC (this might be expanded to chromeOS and/or Android at some point, if possible)<br>
+-- Windows/MAC/Linux PC or Chromebook/Android device<br>
 
 ## Directions
-In release archive or, preferably, [3DS Hacks Guide- MSET9](https://3ds.hacks.guide/installing-boot9strap-(mset9).html).<br>
+[3DS Hacks Guide- MSET9](https://3ds.hacks.guide/installing-boot9strap-(mset9).html).<br>
 
 ## Troubleshooting
 https://3ds.hacks.guide/troubleshooting.html#installing-boot9strap-mset9
@@ -62,8 +63,6 @@ https://3ds.hacks.guide/troubleshooting.html#installing-boot9strap-mset9
 ## Additional Thanks
 These are repos containing homebrew binaries included in the release archive. Many thanks to the authors.<br>
 https://github.com/LumaTeam/Luma3DS<br>
-https://github.com/d0k3/GodMode9<br>
 https://github.com/d0k3/SafeB9SInstaller (renamed SafeB9S.bin)<br>
 https://github.com/devkitPro/3ds-hbmenu<br>
 https://github.com/SciresM/boot9strap<br>
-https://github.com/Steveice10/FBI<br>
