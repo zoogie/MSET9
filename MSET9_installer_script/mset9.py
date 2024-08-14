@@ -73,11 +73,12 @@ thisfile = os.path.abspath(__file__)
 scriptroot = os.path.dirname(thisfile)
 systmp = None
 
-systemroot = pathlib.Path(sys.executable).anchor # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
-if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
-	prbad("Error 01: Script is not running on your SD card!")
-	prinfo(f"Current location: {scriptroot}")
-	exitOnEnter()
+def verify_device():
+	systemroot = pathlib.Path(sys.executable).anchor # Never hardcode C:. My Windows drive letter is E:, my SD card or USB drive is often C:.
+	if os.stat(scriptroot).st_dev == os.stat(systemroot).st_dev:
+		prbad("Error 01: Script is not running on your SD card!")
+		prinfo(f"Current location: {scriptroot}")
+		exitOnEnter()
 
 def dig_for_root():
 	import shutil
@@ -137,12 +138,13 @@ if osver == "Darwin":
 		return subprocess.run(["diskutil", *command, dev], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
 
 	if len(sys.argv) < 2:
-		if not scriptroot.startswith("/Volumes/"):
+		verify_device()
+		if not scriptroot.startswith("/Volumes/"): # Can probably remove this now given the above function but meh!
 			prbad("Error 01: Couldn't find Nintendo 3DS folder! Ensure that you are running this script from the root of the SD card.")
 			# should we add some macos specific message?
 			exitOnEnter()
 
-		# dig_for_root()
+		dig_for_root()
 		prinfo("Resolving device...")
 		device = None
 		devid = os.stat(scriptroot).st_dev
@@ -573,6 +575,7 @@ else:
 		def print_root(self):
 			prinfo(f"Current dir: {self.root}")
 
+	verify_device()
 	dig_for_root()
 	fs = OSFS(scriptroot)
 
