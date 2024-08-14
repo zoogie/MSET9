@@ -88,7 +88,7 @@ def dig_for_root():
 		while not os.path.ismount(root) and root != os.path.dirname(root):
 			root = os.path.dirname(root)
 
-		for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "mset9.bat", "mset9.command", "_INSTRUCTIONS.txt", "errors.txt"]:
+		for f in ["SafeB9S.bin", "b9", "boot.firm", "boot.3dsx", "boot9strap/", "mset9.py", "MSET9-Windows.bat", "MSET9-macOS.command", "_INSTRUCTIONS.txt", "errors.txt"]:
 			try:
 				shutil.move(os.path.join(scriptroot, f), os.path.join(root, f))
 			except:
