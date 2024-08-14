@@ -142,7 +142,7 @@ if osver == "Darwin":
 			# should we add some macos specific message?
 			exitOnEnter()
 
-		dig_for_root()
+		# dig_for_root()
 		prinfo("Resolving device...")
 		device = None
 		devid = os.stat(scriptroot).st_dev
