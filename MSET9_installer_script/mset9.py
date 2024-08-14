@@ -503,7 +503,7 @@ if osver == "Darwin":
 				prinfo("might also be ios entitlement issue")
 				prinfo("please install ldid or fix your python manually")
 				prinfo("(require entitlement com.apple.private.security.disk-device-access)")
-		elif "Invalid" in msg:
+		elif "Invalid" in msg or "bytes per sector" in msg:
 			prbad("Error 15: Not FAT32 formatted or corrupted filesystem.")
 			prinfo("Please ensure your SD card is properly formatted")
 			prinfo("Consult: https://wiki.hacks.guide/wiki/Formatting_an_SD_card")
