@@ -29,7 +29,7 @@ Source: [3Dbrew](https://www.3dbrew.org/wiki/3DS_System_Flaws#Process9)
 In release archive or, preferably, [3DS Hacks Guide- MSET9](https://3ds.hacks.guide/installing-boot9strap-(mset9).html).<br>
 
 ## Troubleshooting
-https://3ds.hacks.guide/troubleshooting.html#installing-boot9strap-mset9
+https://3ds.hacks.guide/troubleshooting-mset9.html
 
 ## FAQ
 
