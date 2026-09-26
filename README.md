@@ -34,7 +34,7 @@ https://3ds.hacks.guide/troubleshooting-mset9.html
 ## FAQ
 
 - Q: This installs boot9strap and writes to NAND?<br>
-  A: Yes! What else ya gonna do with ARM9 control, a9lh? pastaCFW? sketchy tetris clones" :p
+  A: Yes! What else ya gonna do with ARM9 control: a9lh? pastaCFW? sketchy tetris clones? :p
 - Q: That sounds dangerous, Zoogie!<br>
   A: Yeah, it kinda is but the scene's been doing this dangerous stuff for years. Just sit out the beta phase if concerned.
 - Q: What happens if I fail to uninstall the exploit when I'm done?<br>
